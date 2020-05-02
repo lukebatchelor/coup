@@ -4,7 +4,7 @@ node_modules
 docker/mysql
 docker/redis
 yarn-error.log
-startups.sqlite
+coup.sqlite
 .DS_Store
 *~
 *.png-autosave.kra

@@ -17,5 +17,5 @@
     "baseUrl": "."
   },
   "include": ["src/**/*"],
-  "files": ["./typings/global.d.ts"]
+  "files": ["./typings/global.d.ts", "./typings/sqlite-async.d.ts"]
 }
