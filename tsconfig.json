@@ -1,0 +1,20 @@
+/*
+  TSConfig is used for client code only
+*/
+{
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es6",
+    "module": "commonjs",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "jsx": "react",
+    "baseUrl": ".",
+    "allowJs": true
+  },
+  "files": ["./typings/global.d.ts"],
+  "include": ["client/**/*.ts", "client/**/*.tsx", "game-engine.d.ts"]
+}

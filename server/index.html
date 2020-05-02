@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io.connect('http://localhost:8080');
+
+      socket.on('connect', () => {
+        const id = localStorage.getItem('id');
+        socket.emit('handshake', { id });
+      });
+      socket.on('welcome', function ({ id, roomCode, nickName }) {
+        console.log(`Have connected to server. I am client id: ${id}`);
+        localStorage.setItem('id', id);
+        if (!roomCode) {
+          socket.emit('create-room');
+        }
+      });
+      socket.on('room-created', ({ roomCode }) => {
+        console.log('Room created: ' + roomCode);
+      });
+      socket.on('room-status', ({ roomCode, users }) => {
+        console.log('Got #RoomStatus update: ' + JSON.stringify({ roomCode, users }));
+      });
+    </script>
+  </head>
+  <body>
+    This is a body
+  </body>
+</html>
