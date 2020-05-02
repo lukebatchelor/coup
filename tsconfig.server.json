@@ -1,0 +1,11 @@
+/*
+  This tsconfig is used only to build the server, it extends the baseconfig
+  which is used for typechecking the whole repo and only provides overrides
+*/
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/server"
+  },
+  "include": ["src/server/**/*"]
+}

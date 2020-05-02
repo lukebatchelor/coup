@@ -1,5 +1,7 @@
 /*
-  TSConfig is used for client code only
+  This tsconfig contains all the config that is shared accross the frontend
+  and backend. It's also used as the default config picked up by typechecking
+  and IDEs
 */
 {
   "compilerOptions": {
@@ -12,9 +14,8 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     "jsx": "react",
-    "baseUrl": ".",
-    "allowJs": true
+    "baseUrl": "."
   },
-  "files": ["./typings/global.d.ts"],
-  "include": ["client/**/*.ts", "client/**/*.tsx", "game-engine.d.ts"]
+  "include": ["src/**/*"],
+  "files": ["./typings/global.d.ts"]
 }
