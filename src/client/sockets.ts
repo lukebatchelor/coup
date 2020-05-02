@@ -1,12 +1,5 @@
 import socketIO from 'socket.io-client';
 
-type WelcomeData = {
-  id: string;
-  roomCode?: string;
-  nickName?: string;
-  inGame: boolean;
-};
-
 // our single instance of socket that everyone will use
 let socket: SocketIOClient.Socket;
 
@@ -17,11 +10,11 @@ function getSocket() {
   return socket;
 }
 
-function initialiseSocket(welcomeCallback: (welcomeData: WelcomeData) => void) {
-  const regex = /(.*?)\/startups$/;
+function initialiseSocket() {
+  const regex = /(.*?)\/coup$/;
   if (process.env.BASE_URL.match(regex)) {
     let uri = process.env.BASE_URL.match(regex)[1];
-    socket = socketIO.connect(uri, { path: '/startups/socket.io' });
+    socket = socketIO.connect(uri, { path: '/coup/socket.io' });
   } else {
     socket = socketIO.connect(process.env.BASE_URL);
   }
@@ -31,7 +24,9 @@ function initialiseSocket(welcomeCallback: (welcomeData: WelcomeData) => void) {
     socket.emit('handshake', { id });
   });
 
-  socket.on('welcome', welcomeCallback);
+  socket.on('welcome', (welcomeMessage: WelcomeMessage) => {
+    localStorage.setItem('id', welcomeMessage.id);
+  });
 
   return socket;
 }

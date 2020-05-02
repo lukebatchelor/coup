@@ -17,8 +17,8 @@ const config: webpack.Configuration = {
     compress: true,
     proxy: [
       {
-        context: ['/api'],
-        target: 'http://localhost:9000',
+        context: ['/socket.io', '/api'],
+        target: 'http://localhost:8080',
       },
     ],
   },
@@ -46,6 +46,7 @@ const config: webpack.Configuration = {
         };
       },
     }),
+    new webpack.EnvironmentPlugin({ BASE_URL: 'http://localhost:8000' }),
   ],
 };
 

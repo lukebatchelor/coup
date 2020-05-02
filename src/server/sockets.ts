@@ -53,10 +53,10 @@ export function configureSockets(appServer: http.Server) {
       client.playerId = id;
       client.emit('welcome', {
         id,
-        nickName: exists ? exists.nickName : null,
-        roomCode: exists ? exists.roomCode : null,
-        host: exists ? exists.host : null,
-        inGame,
+        nickName: exists ? exists.nickName : '',
+        roomCode: exists ? exists.roomCode : '',
+        host: exists ? !!exists.host : null,
+        inGame: !!inGame,
       } as WelcomeMessage);
       if (exists && exists.nickName && exists.roomCode) {
         await playerJoinsRoom({ roomCode: exists.roomCode, nickName: exists.nickName, host: exists.host });
@@ -79,7 +79,7 @@ export function configureSockets(appServer: http.Server) {
       const usersInRoom = await getUsersInRoom(roomCode);
       client.join(roomCode);
       console.log('sending room status ', JSON.stringify({ roomCode, players: usersInRoom }));
-      server.to(roomCode).emit('room-status', { roomCode, players: usersInRoom });
+      server.to(roomCode).emit('room-status', { roomCode, players: usersInRoom } as RoomStatusMessage);
       console.log(`Player ${client.playerId} joined room ${roomCode}`);
     }
 
