@@ -10,7 +10,7 @@
     "build-server": "tsc -p server.tsconfig.json",
     "start": "node dist/index.js",
     "dev": "concurrently --kill-others-on-fail 'yarn dev-server' 'yarn dev-client'",
-    "dev-server": "ts-node-dev --watch 'server/**/*.ts' src/server/index.ts",
+    "dev-server": "ts-node-dev --watch 'src/server/**/*.ts' src/server/server.ts",
     "dev-client": "webpack-dev-server",
     "typecheck": "tsc --noEmit"
   },
