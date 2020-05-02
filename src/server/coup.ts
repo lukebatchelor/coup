@@ -5,7 +5,7 @@ type State = {
   deck: Array<Card>;
   hands: Array<[CardInHand, CardInHand]>;
   currTurn: number;
-  currTurnActions: Array<Action>;
+  currTurnActions: Array<{ player: number; action: Action }>;
 };
 
 // Cards
@@ -18,7 +18,7 @@ const fullDeck = allCards.reduce(function (result, curr) {
 
 // Actions
 type ChallengeAction = { type: 'Challenge'; blockable: false; challengable: false };
-type BlockAction = { type: 'Block'; blockable: false; challengable: false };
+type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: Card };
 type Action =
   | { type: 'Income'; blockable: false; challengable: false }
   | { type: 'Foreign Aid'; blockable: true; challengable: false }
@@ -27,7 +27,8 @@ type Action =
   | { type: 'Assassinate'; blockable: true; challengable: true; target?: number }
   | { type: 'Exchange'; blockable: false; challengable: true; cards: [0] | [1] | [0, 1] }
   | { type: 'Steal'; blockable: true; challengable: true; target?: number }
-  | ChallengeAction;
+  | ChallengeAction
+  | BlockAction;
 
 type ActionPhaseActions = {
   generalActions: Array<Action>;
@@ -35,7 +36,7 @@ type ActionPhaseActions = {
   bluffActions: Array<Action>;
 };
 type ActionPlayedPhaseActions = {
-  challengeAction: Array<ChallengeAction>;
+  challengeActions: Array<ChallengeAction>;
   blockActions: Array<BlockAction>;
   bluffBlockActions: Array<BlockAction>;
 };
@@ -109,21 +110,52 @@ export default class Coup {
   }
 
   getActionPlayedPhaseActions(playerIndex: number): ActionPlayedPhaseActions {
-    const actionOnStack = this.state.currTurnActions[0];
+    const actionOnStack = this.state.currTurnActions[0].action;
     // No actions available if it's your turn.
     if (this.state.currTurn === playerIndex) {
-      return { challengeAction: null, counterActions: [], bluffCounterActions: [] };
+      return { challengeActions: [], blockActions: [], bluffBlockActions: [] };
     }
-    const challengeAction = actionOnStack.challengable
-      ? ({ type: 'Challenge', blockable: false, challengable: false } as ChallengeAction)
-      : null;
+    const challengeActions = actionOnStack.challengable
+      ? ([{ type: 'Challenge', blockable: false, challengable: false }] as Array<ChallengeAction>)
+      : [];
 
-    const counterActions = getCounterActionsToActionForPlayer(actionOnStack, playerIndex);
-    return { challengeAction, counterActions: [], bluffCounterActions: [] };
+    const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+    const blockActions = this.getAvailableBlockActionsForCards(actionOnStack, usableCards);
+
+    const cardsPlayerDoesNotHave = this.getCardsPlayerDoesNotHave(playerIndex);
+    const bluffBlockActions = this.getAvailableBlockActionsForCards(actionOnStack, cardsPlayerDoesNotHave);
+
+    return { challengeActions, blockActions, bluffBlockActions };
   }
 
-  getCounterActionsToActionForPlayer(Action): Array<CounterAction> {
-    return [];
+  getAvailableBlockActionsForCards(actionToBlock: Action, cardsToBlockWith: Array<Card>): Array<BlockAction> {
+    return cardsToBlockWith
+      .map((card) => this.getBlockActionForCharacter(card, actionToBlock))
+      .filter((a) => a != null);
+  }
+
+  getBlockActionForCharacter(card: Card, actionToBlock: Action): BlockAction | null {
+    const blockAction = { type: 'Block', blockable: false, challengable: true, card } as BlockAction;
+    switch (card) {
+      case 'Contessa':
+        if (actionToBlock.type === 'Assassinate') {
+          return blockAction;
+        }
+        return null;
+      case 'Duke':
+        if (actionToBlock.type === 'Foreign Aid') {
+          return blockAction;
+        }
+        return null;
+      case 'Captain':
+      case 'Ambassador':
+        if (actionToBlock.type === 'Steal') {
+          return blockAction;
+        }
+        return null;
+      default:
+        return null;
+    }
   }
 
   drawCardFromDeck() {
@@ -169,6 +201,6 @@ function shuffle(array: Array<any>) {
   return array;
 }
 
-function flatten(array: Array<Array<any>>): Array<any> {
+function flatten<T>(array: Array<Array<T>>): Array<T> {
   return array.reduce((res, curr) => res.concat(...curr), []);
 }
