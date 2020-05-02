@@ -3,7 +3,7 @@ import Database from 'sqlite-async';
 const db = Database.open('coup.sqlite');
 
 export type HostMode = 'Host' | 'Player' | null;
-export type UserRecord = { _id: number; id: string; nickName: string; roomCode: string; hostMode: HostMode };
+export type UserRecord = { _id: number; id: string; nickName: string; roomCode: string; host: boolean };
 export type RoomRecord = { _id: number; roomCode: string; inGame: boolean; gameState: string };
 
 export async function createInitialTables(): Promise<void> {
@@ -66,17 +66,12 @@ export async function getRoom(roomId: string): Promise<RoomRecord> {
   }
 }
 
-export async function addUserToRoom(
-  roomCode: string,
-  userId: string,
-  nickName: string,
-  hostMode: HostMode
-): Promise<void> {
+export async function addUserToRoom(roomCode: string, userId: string, nickName: string, host: boolean): Promise<void> {
   try {
-    return (await db).run('UPDATE users set roomCode = ?, nickName = ?, hostMode = ? WHERE id = ?', [
+    return (await db).run('UPDATE users set roomCode = ?, nickName = ?, host = ? WHERE id = ?', [
       roomCode,
       nickName,
-      hostMode,
+      host,
       userId,
     ]);
   } catch (error) {
@@ -94,7 +89,7 @@ export async function getUsersInRoom(roomCode: string): Promise<Array<UserRecord
 
 export async function removeRoomFromUser(userId: string): Promise<void> {
   try {
-    return (await db).run('UPDATE users set roomCode = null, hostMode = null WHERE id = ?', [userId]);
+    return (await db).run('UPDATE users set roomCode = null, host = false WHERE id = ?', [userId]);
   } catch (error) {
     console.log('Error ', error);
   }

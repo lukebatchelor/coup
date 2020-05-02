@@ -1,7 +1,6 @@
 import socketIo from 'socket.io';
 import { v4 as uuid } from 'uuid';
 import randomstring from 'randomstring';
-import isEqual from 'lodash.isequal';
 import http from 'http';
 
 import {
@@ -34,7 +33,7 @@ export function configureSockets(appServer: http.Server) {
     // client.on('restart-game', restartGame);
     // client.on('request-game-state', requestGameState);
 
-    async function handshake({ id }: { id: string }) {
+    async function handshake({ id }: HandshakeMessage) {
       let exists: UserRecord = null;
       let inGame = false;
       if (id) {
@@ -56,11 +55,11 @@ export function configureSockets(appServer: http.Server) {
         id,
         nickName: exists ? exists.nickName : null,
         roomCode: exists ? exists.roomCode : null,
-        hostMode: exists ? exists.hostMode : null,
+        host: exists ? exists.host : null,
         inGame,
-      });
+      } as WelcomeMessage);
       if (exists && exists.nickName && exists.roomCode) {
-        await playerJoinsRoom({ roomCode: exists.roomCode, nickName: exists.nickName, hostMode: exists.hostMode });
+        await playerJoinsRoom({ roomCode: exists.roomCode, nickName: exists.nickName, host: exists.host });
       }
     }
 
@@ -75,16 +74,8 @@ export function configureSockets(appServer: http.Server) {
       client.emit('room-created', { roomCode });
     }
 
-    async function playerJoinsRoom({
-      roomCode,
-      nickName,
-      hostMode,
-    }: {
-      roomCode: string;
-      nickName: string;
-      hostMode: HostMode;
-    }) {
-      await addUserToRoom(roomCode, client.playerId, nickName, hostMode);
+    async function playerJoinsRoom({ roomCode, nickName, host }: PlayerJoinRoomMessage) {
+      await addUserToRoom(roomCode, client.playerId, nickName, host);
       const usersInRoom = await getUsersInRoom(roomCode);
       client.join(roomCode);
       console.log('sending room status ', JSON.stringify({ roomCode, players: usersInRoom }));
@@ -92,9 +83,9 @@ export function configureSockets(appServer: http.Server) {
       console.log(`Player ${client.playerId} joined room ${roomCode}`);
     }
 
-    async function playerLeavesRoom({ roomCode }: { roomCode: string }) {
+    async function playerLeavesRoom({ roomCode }: PlayerLeaveRoomMessage) {
       const user = await getUser(client.playerId);
-      const wasHost = user.hostMode !== null;
+      const wasHost = user.host;
 
       await removeRoomFromUser(client.playerId);
       const usersInRoom = await getUsersInRoom(roomCode);
@@ -107,8 +98,8 @@ export function configureSockets(appServer: http.Server) {
       console.log(`Player ${client.playerId} left room ${roomCode} (host: ${wasHost})`);
     }
 
-    async function allPlayersReady({ roomCode }: { roomCode: string }) {
-      const usersInRoom = (await getUsersInRoom(roomCode)).filter((p) => p.hostMode !== 'Host');
+    async function allPlayersReady({ roomCode }: AllPlayersReadyMessage) {
+      const usersInRoom = (await getUsersInRoom(roomCode)).filter((p) => p.host === false);
       // const startups = new Startups({ players: shuffle(usersInRoom) });
       await startGameForRoom(roomCode, 'state');
       console.log(`Starting game in room ${roomCode}`);
