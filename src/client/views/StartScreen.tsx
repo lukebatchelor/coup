@@ -1,10 +1,7 @@
 import React, { useContext } from 'react';
 import { makeStyles, Container, Paper, Typography, Box, Grid, Button, Link } from '@material-ui/core';
-import { CurViewContext } from '../contexts/CurViewContext';
 import { Views } from './Views';
-import { PlayerContext } from '../contexts/PlayerContext';
-import { getSocket } from '../sockets';
-import { SocketContext } from '../contexts/SocketContext';
+import { CurViewContext, SocketContext, PlayerContext } from '../contexts';
 
 const useStyles = makeStyles((theme) => ({
   paper: {

@@ -4,10 +4,7 @@ import { CssBaseline, makeStyles, AppBar, Toolbar, IconButton, Box, Typography }
 import HomeIcon from '@material-ui/icons/Home';
 
 import { Views, StartScreen, InstructionsScreen, JoinGameScreen, LobbyScreen, PlayingScreen } from './views';
-import { CurViewContext } from './contexts/CurViewContext';
-import { initialiseSocket } from './sockets';
-import { SocketContext } from './contexts/SocketContext';
-import { PlayerContext } from './contexts/PlayerContext';
+import { CurViewContext, SocketContext, PlayerContext } from './contexts';
 
 const useStyles = makeStyles((theme) => ({
   main: {

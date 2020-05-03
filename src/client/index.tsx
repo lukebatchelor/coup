@@ -4,9 +4,7 @@ import React, { useState } from 'react';
 import ReactDom from 'react-dom';
 
 import { App } from './App';
-import { CurViewProvider } from './contexts/CurViewContext';
-import { PlayerProvider } from './contexts/PlayerContext';
-import { SocketProvider } from './contexts/SocketContext';
+import { CurViewProvider, PlayerProvider, SocketProvider } from './contexts';
 
 ReactDom.render(
   <CurViewProvider>

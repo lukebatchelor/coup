@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Typography, Box, Paper, Grid, Avatar, Button } from '@material-ui/core';
-import { PlayerContext } from '../contexts/PlayerContext';
-import { SocketContext } from '../contexts/SocketContext';
+import { SocketContext, PlayerContext } from '../contexts';
 
 const useStyles = makeStyles((theme) => ({
   paper: {

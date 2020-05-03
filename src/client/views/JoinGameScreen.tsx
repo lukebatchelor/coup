@@ -1,8 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { makeStyles, Container, TextField, Box, Button } from '@material-ui/core';
-import { PlayerContext } from '../contexts/PlayerContext';
-import { SocketContext } from '../contexts/SocketContext';
-import { CurViewContext } from '../contexts/CurViewContext';
+import { PlayerContext, CurViewContext, SocketContext } from '../contexts';
+
 import { Views } from './Views';
 
 const useStyles = makeStyles((theme) => ({}));
