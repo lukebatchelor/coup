@@ -65,7 +65,8 @@ export function App() {
         {curView === Views.InstructionsScreen && <InstructionsScreen />}
         {curView === Views.JoinGame && <JoinGameScreen />}
         {curView === Views.Lobby && <LobbyScreen />}
-        {curView === Views.PlayingScreen && <PlayingScreen />}
+        {curView === Views.PlayingScreen && !playerInfo.isHost && <PlayingScreen />}
+        {curView === Views.PlayingScreen && playerInfo.isHost && <LobbyScreen />}
       </main>
     </div>
   );

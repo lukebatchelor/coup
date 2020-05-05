@@ -100,7 +100,6 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
           <GridList cols={3} style={{ flexWrap: 'nowrap', transform: 'translateZ(0)' }}>
             {startups.map((card: any, i: number) => {
               const className = clsx(classes.card, { [classes.selected]: allowSelection && selected.includes(i) });
-              console.log(i, className);
               return (
                 <Box ml={1} mr={1} key={'cc' + i}>
                   <img src="/card.jpg" className={className} alt="card" onClick={() => onClick(i)} />

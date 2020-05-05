@@ -19,7 +19,7 @@ export type State = {
   currTurnActions: Array<PlayerAction>;
   resolutionActions: Array<ResolutionAction>;
   phase: Phase;
-  actions: Array<PlayableActions>;
+  actions: Array<AvailableActions>;
 };
 
 // Cards
@@ -31,81 +31,62 @@ const fullDeck = allCards.reduce(function (result, curr) {
 }, []);
 
 // Actions
-export type ChallengeAction = { type: 'Challenge'; blockable: false; challengable: false };
-export type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: Card };
-export type RevealAction = { type: 'Reveal'; blockable: false; challengable: false; card: Card };
-export type DiscardAction = { type: 'Discard'; blockable: false; challengable: false; card: Card };
 
 export type ResolutionAction =
   | { type: 'Gain Coins'; gainingPlayer: number; coins: number }
   | { type: 'Lose Coins'; losingPlayer: number; coins: number }
   | { type: 'Steal'; gainingPlayer: number; losingPlayer: number; coins: number }
-  | { type: 'Reveal'; player: number; card: Card }
+  | { type: 'Flip'; player: number; card: Card }
   | { type: 'Exchange'; player: number; numberOfCards: number }
+  | { type: 'Draw'; player: number }
+  | { type: 'Discard'; player: number; card: Card }
   | { type: 'Blocked'; blockingPlayer: number };
 
-export type Action =
-  | { type: 'Income'; blockable: false; challengable: false }
-  | { type: 'Foreign Aid'; blockable: true; challengable: false }
-  | { type: 'Coup'; blockable: false; challengable: false; target: number }
-  | { type: 'Tax'; blockable: false; challengable: true }
-  | { type: 'Assassinate'; blockable: true; challengable: true; target: number }
-  | { type: 'Exchange'; blockable: false; challengable: true }
-  | { type: 'Steal'; blockable: true; challengable: true; target: number; coins: number }
-  | ChallengeAction
-  | BlockAction
-  | RevealAction
-  | DiscardAction;
+// General Actions
+export type IncomeAction = { type: 'Income'; blockable: false; challengable: false };
+export type ForeinAidAction = { type: 'Foreign Aid'; blockable: true; challengable: false };
+export type CoupAction = { type: 'Coup'; blockable: false; challengable: false; target: number };
+export type ChallengeAction = { type: 'Challenge'; blockable: false; challengable: false };
+export type RevealAction = { type: 'Reveal'; blockable: false; challengable: false; card: Card };
 
-export type PlayerAction = { player: number; action: Action };
+// Character/Bluff Actions
+export type TaxAction = { type: 'Tax'; blockable: false; challengable: true };
+export type AssassinateAction = { type: 'Assassinate'; blockable: true; challengable: true; target: number };
+export type ExchangeAction = { type: 'Exchange'; blockable: false; challengable: true };
+export type StealAction = { type: 'Steal'; blockable: true; challengable: true; target: number };
+export type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: Card };
 
-export type ActionPhaseActions = {
-  generalActions: Array<Action>;
-  characterActions: Array<Action>;
-  bluffActions: Array<Action>;
-};
-export type ActionPlayedPhaseActions = {
-  challengeActions: Array<ChallengeAction>;
-  blockActions: Array<BlockAction>;
-  bluffBlockActions: Array<BlockAction>;
-};
-export type BlockedActionPhaseActions = {
-  challengeActions: Array<ChallengeAction>;
-};
+// Other actions that can be on the stack but are not put there by players.
+export type RevealingInfluence = { type: 'Revealing Influence'; blockable: false; challengable: false };
 
-export type ChallengedActionPhaseActions = {
-  revealActions: Array<RevealAction>;
+// ChooseAction - used after assassinate/coup/challenge/exchange
+export type ChooseAction = { type: 'Choose'; blockable: false; challengable: false; cards: Array<Card> };
+
+export type GeneralAction = IncomeAction | ForeinAidAction | CoupAction | ChallengeAction | RevealAction;
+export type CharacterAction = TaxAction | AssassinateAction | ExchangeAction | StealAction | BlockAction;
+
+export type Action = GeneralAction | CharacterAction | ChooseAction | RevealingInfluence;
+
+export type PlayerAction = {
+  player: number;
+  action: GeneralAction | CharacterAction | ChooseAction | RevealingInfluence;
 };
 
-export type ChallengedBlockActionPhaseActions = {
-  revealActions: Array<RevealAction>;
+export type AvailableActions = {
+  generalActions: Array<GeneralAction>;
+  characterActions: Array<CharacterAction>;
+  bluffActions: Array<CharacterAction>;
+  chooseActions?: {
+    cards: Array<Card>;
+    actions: Array<ChooseAction>;
+  };
 };
-
-export type ChallengedActionFailedPhaseActions = {
-  revealActions: Array<RevealAction>;
-};
-
-export type ChallengedActionSucceededPhaseActions = {
-  revealActions: Array<RevealAction>;
-};
-
-export type PreResolvingActions = { revealActions: Array<RevealAction> } | { discardActions: Array<DiscardAction> };
-
-export type PlayableActions =
-  | ActionPhaseActions
-  | ActionPlayedPhaseActions
-  | BlockedActionPhaseActions
-  | ChallengedActionPhaseActions
-  | ChallengedBlockActionPhaseActions
-  | ChallengedActionFailedPhaseActions
-  | ChallengedActionSucceededPhaseActions
-  | PreResolvingActions;
 
 export function getStateInfo(state: State) {
   const id = localStorage.getItem('id');
   const isMyTurn = state.players[state.currTurn].id === id;
   const curTurnName = state.players[state.currTurn].nickName;
-  const lastAction = state.currTurnActions[state.currTurnActions.length - 1];
+  const lastAction = state.currTurnActions.length ? state.currTurnActions[state.currTurnActions.length - 1] : null;
   const me = state.players.find((p) => p.id === id);
 
   return {
