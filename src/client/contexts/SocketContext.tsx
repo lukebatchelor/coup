@@ -1,19 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { initialiseSocket } from '../sockets';
+import { initialiseSocket, safeEmit, safeOn, safeOff } from '../sockets';
 
-type Socket = SocketIOClient.Socket;
-const defaultValue: Socket = null;
+type SocketContextType = {
+  _socket: SocketIOClient.Socket;
+  emit: typeof safeEmit;
+  on: typeof safeOn;
+  off: typeof safeOff;
+};
+const defaultValue: SocketContextType = {
+  _socket: null,
+  emit: safeEmit,
+  on: safeOn,
+  off: safeOff,
+};
 
-const SocketContext = React.createContext<Socket>(defaultValue);
+const SocketContext = React.createContext<SocketContextType>(defaultValue);
 
 const SocketProvider: React.FC = (props) => {
-  const [socket, setSocket] = useState<Socket>(defaultValue);
+  const [socket, setSocket] = useState<SocketIOClient.Socket>(null);
 
   useEffect(() => {
     setSocket(initialiseSocket());
   }, []);
 
-  return <SocketContext.Provider value={socket}>{props.children}</SocketContext.Provider>;
+  const value = {
+    _socket: socket,
+    emit: safeEmit,
+    on: safeOn,
+    off: safeOff,
+  };
+
+  return <SocketContext.Provider value={value}>{props.children}</SocketContext.Provider>;
 };
 
 export { SocketContext, SocketProvider };

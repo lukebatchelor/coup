@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { makeStyles, Container, TextField, Box, Button } from '@material-ui/core';
-import { PlayerContext, CurViewContext, SocketContext } from '../contexts';
+import { PlayerContext, CurViewContext } from '../contexts';
 
 import { Views } from './Views';
 
@@ -10,8 +10,7 @@ type JoinGameScreenProps = {};
 export function JoinGameScreen(props: JoinGameScreenProps) {
   const classes = useStyles();
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
-  const [curView, setCurView] = useContext(CurViewContext);
-  const socket = useContext(SocketContext);
+  const [, setCurView] = useContext(CurViewContext);
 
   const [nickName, setNickName] = useState<string>('');
   const [roomCode, setRoomCode] = useState<string>(playerInfo.roomCode);

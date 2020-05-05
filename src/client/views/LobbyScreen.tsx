@@ -22,7 +22,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
   useEffect(() => {
     const joinRoomData: PlayerJoinRoomMessage = { roomCode, nickName, host: isHost };
     socket.emit('player-join-room', joinRoomData);
-    socket.on('room-status', ({ roomCode, players }: RoomStatusMessage) => {
+    socket.on('room-status', ({ roomCode, players }) => {
       console.log({ roomCode, players });
       setPlayers(players.filter((p) => !p.host));
     });
@@ -33,6 +33,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
     // make sure we clean up listeners to avoid memory leaks
     return function cleanUp() {
       socket.off('room-status');
+      socket.off('start-game');
     };
   }, []);
 

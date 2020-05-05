@@ -18,9 +18,10 @@ export function StartScreen(props: StartScreenProps) {
 
   const setViewHostGame = () => {
     socket.emit('create-room');
-    socket.on('room-created', (message: RoomCreatedMessage) => {
-      setPlayerInfo({ roomCode: message.roomCode, isHost: true });
-      setCurView(Views.JoinGame);
+    socket.on('room-created', (message) => {
+      setPlayerInfo({ roomCode: message.roomCode, nickName: 'Host', isHost: true });
+      setCurView(Views.Lobby);
+      socket.off('room-created');
     });
   };
   const setViewJoinGame = () => {

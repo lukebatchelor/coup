@@ -31,4 +31,14 @@ function initialiseSocket() {
   return socket;
 }
 
-export { initialiseSocket, getSocket };
+function safeEmit<Event extends keyof SocketEvents>(event: Event, payload?: SocketEvents[Event]) {
+  getSocket().emit(event, payload);
+}
+function safeOn<Event extends keyof SocketEvents>(event: Event, callback: (payload?: SocketEvents[Event]) => void) {
+  getSocket().on(event, callback);
+}
+function safeOff<Event extends keyof SocketEvents>(event: Event) {
+  getSocket().off(event);
+}
+
+export { initialiseSocket, getSocket, safeEmit, safeOn, safeOff };

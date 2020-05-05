@@ -31,7 +31,7 @@ export function App() {
 
   useEffect(() => {
     if (socket) {
-      socket.on('welcome', (data: WelcomeMessage) => {
+      socket.on('welcome', (data) => {
         console.log('welcome', data);
         const { nickName, roomCode, host, inGame } = data;
         setPlayerInfo({ nickName, roomCode, isHost: host, inGame });
