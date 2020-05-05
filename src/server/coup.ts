@@ -1,17 +1,5 @@
 type Player = { index: number; coins: number; nickname: string; id: string };
-type Phase =
-  | 'Action'
-  | 'Action_Played'
-  | 'Blocked_Action'
-  | 'Challenged_Action'
-  | 'Challenged_Block_Action'
-  | 'Pre_Resolving'
-  | 'Resolving'
-  | 'Challenged_Action_Failed'
-  | 'Challenged_Action_Succeeded'
-  | 'Challenged_Block_Action_Failed'
-  | 'Challenged_Block_Action_Succeeded'
-  | 'Challenged_Action_Failed_Pre_Resolve';
+
 type State = {
   players: Array<Player>;
   deck: Array<Card>;
@@ -19,8 +7,7 @@ type State = {
   currTurn: number;
   currTurnActions: Array<PlayerAction>;
   resolutionActions: Array<ResolutionAction>;
-  phase: Phase;
-  actions: Array<PlayableActions>;
+  actions: Array<AvailableActions>;
 };
 
 // Cards
@@ -32,77 +19,52 @@ const fullDeck = allCards.reduce(function (result, curr) {
 }, []);
 
 // Actions
-type ChallengeAction = { type: 'Challenge'; blockable: false; challengable: false };
-type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: Card };
-type RevealAction = { type: 'Reveal'; blockable: false; challengable: false; card: Card };
-type DiscardAction = { type: 'Discard'; blockable: false; challengable: false; card: Card };
 
 type ResolutionAction =
   | { type: 'Gain Coins'; gainingPlayer: number; coins: number }
   | { type: 'Lose Coins'; losingPlayer: number; coins: number }
-  | { type: 'Steal'; gainingPlayer: number; losingPlayer: number; coins: number }
-  | { type: 'Reveal'; player: number; card: Card }
-  | { type: 'Exchange'; player: number; numberOfCards: number }
+  | { type: 'Flip'; player: number; card: Card }
   | { type: 'Draw'; player: number }
-  | { type: 'Discard'; player: number; card: Card }
-  | { type: 'Blocked'; blockingPlayer: number };
+  | { type: 'Discard'; player: number; card: Card };
 
-type Action =
-  | { type: 'Income'; blockable: false; challengable: false }
-  | { type: 'Foreign Aid'; blockable: true; challengable: false }
-  | { type: 'Coup'; blockable: false; challengable: false; target: number }
-  | { type: 'Tax'; blockable: false; challengable: true }
-  | { type: 'Assassinate'; blockable: true; challengable: true; target: number }
-  | { type: 'Exchange'; blockable: false; challengable: true }
-  | { type: 'Steal'; blockable: true; challengable: true; target: number }
-  | ChallengeAction
-  | BlockAction
-  | RevealAction
-  | DiscardAction;
+// General Actions
+type IncomeAction = { type: 'Income'; blockable: false; challengable: false };
+type ForeinAidAction = { type: 'Foreign Aid'; blockable: true; challengable: false };
+type CoupAction = { type: 'Coup'; blockable: false; challengable: false; target: number };
+type ChallengeAction = { type: 'Challenge'; blockable: false; challengable: false };
+type RevealAction = { type: 'Reveal'; blockable: false; challengable: false; card: Card };
+
+// Character/Bluff Actions
+type TaxAction = { type: 'Tax'; blockable: false; challengable: true };
+type AssassinateAction = { type: 'Assassinate'; blockable: true; challengable: true; target: number };
+type ExchangeAction = { type: 'Exchange'; blockable: false; challengable: true };
+type StealAction = { type: 'Steal'; blockable: true; challengable: true; target: number };
+type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: Card };
+
+// Other actions that can be on the stack but are not put there by players.
+type RevealingInfluence = { type: 'Revealing Influence'; blockable: false; challengable: false };
+type Exchanging = { type: 'Exchanging Influence'; blockable: false; challengable: false };
+type OtherAction = RevealingInfluence | Exchanging;
+
+// ChooseAction - used after assassinate/coup/challenge/exchange
+type ChooseAction = { type: 'Choose'; blockable: false; challengable: false; cards: Array<Card> };
+
+type GeneralAction = IncomeAction | ForeinAidAction | CoupAction | ChallengeAction | RevealAction;
+type CharacterAction = TaxAction | AssassinateAction | ExchangeAction | StealAction | BlockAction;
+
+type Action = GeneralAction | CharacterAction | ChooseAction | OtherAction;
 
 type PlayerAction = { player: number; action: Action };
 
-type ActionPhaseActions = {
-  generalActions: Array<Action>;
-  characterActions: Array<Action>;
-  bluffActions: Array<Action>;
+type AvailableActions = {
+  generalActions: Array<GeneralAction>;
+  characterActions: Array<CharacterAction>;
+  bluffActions: Array<CharacterAction>;
+  chooseActions?: {
+    cards: Array<Card>;
+    actions: Array<ChooseAction>;
+  };
 };
-type ActionPlayedPhaseActions = {
-  challengeActions: Array<ChallengeAction>;
-  blockActions: Array<BlockAction>;
-  bluffBlockActions: Array<BlockAction>;
-};
-type BlockedActionPhaseActions = {
-  challengeActions: Array<ChallengeAction>;
-};
-
-type ChallengedActionPhaseActions = {
-  revealActions: Array<RevealAction>;
-};
-
-type ChallengedBlockActionPhaseActions = {
-  revealActions: Array<RevealAction>;
-};
-
-type ChallengedActionFailedPhaseActions = {
-  revealActions: Array<RevealAction>;
-};
-
-type ChallengedActionSucceededPhaseActions = {
-  revealActions: Array<RevealAction>;
-};
-
-type PreResolvingActions = { revealActions: Array<RevealAction> } | { discardActions: Array<DiscardAction> };
-
-type PlayableActions =
-  | ActionPhaseActions
-  | ActionPlayedPhaseActions
-  | BlockedActionPhaseActions
-  | ChallengedActionPhaseActions
-  | ChallengedBlockActionPhaseActions
-  | ChallengedActionFailedPhaseActions
-  | ChallengedActionSucceededPhaseActions
-  | PreResolvingActions;
 
 export default class Coup {
   state: State;
@@ -130,7 +92,6 @@ export default class Coup {
       currTurn: 0,
       currTurnActions: [],
       resolutionActions: [],
-      phase: 'Action',
       actions: [],
     };
     this.updateActions();
@@ -149,167 +110,160 @@ export default class Coup {
   }
 
   doAction(player: number, action: Action): void {
-    const phase = this.state.phase;
-    this.state.currTurnActions.push({ player, action });
-    if (phase === 'Action') {
-      this.state.phase = 'Action_Played';
-    } else if (phase === 'Action_Played') {
-      if (action.type === 'Block') {
-        this.state.phase = 'Blocked_Action';
-      } else if (action.type === 'Challenge') {
-        this.state.phase = 'Challenged_Action';
-      } else {
-        assert(false, 'Unexpected action in Action_Played phase: ' + action.type);
-      }
-    } else if (phase === 'Blocked_Action') {
-      assert(action.type === 'Challenge');
-      this.state.phase = 'Challenged_Block_Action';
-    } else if (phase === 'Challenged_Action') {
-      assert(action.type === 'Reveal');
-      this.performSideEffectsForActionInPhase();
-      this.state.phase = this.getStateAfterChallenge();
-    } else if (phase === 'Challenged_Block_Action') {
-      assert(action.type === 'Reveal');
-      this.state.phase = this.getStateAfterChallenge();
-    } else if (phase === 'Challenged_Action_Failed') {
-      assert(action.type === 'Reveal');
-      this.state.phase = 'Challenged_Action_Failed_Pre_Resolve';
-      this.resolveAction();
-    } else if (phase === 'Challenged_Block_Action_Failed') {
-      assert(action.type === 'Reveal');
-      this.state.phase = 'Pre_Resolving';
-      this.resolveAction();
-    } else if (phase === 'Pre_Resolving') {
-      assert(action.type === 'Reveal');
-      // Phase change happens during resolution
-      this.resolveAction();
+    if (action.type !== 'Choose') {
+      this.state.currTurnActions.push({ player, action } as PlayerAction);
     } else {
-      assert(false, 'Missing doAction case for phase=' + phase);
+      const lastAction = this.state.currTurnActions.pop();
+      if (lastAction.action.type === 'Challenge') {
+        this.handleRevealAfterChallenge(player, action, lastAction);
+      } else if (lastAction.action.type === 'Revealing Influence') {
+        this.handleRevealAfterRevealingInfluence(player, action);
+      } else if (lastAction.action.type === 'Exchanging Influence') {
+        this.handleRevealAfterExchange(player, action);
+      } else {
+        assert(false, 'Unexpected lastAction on stack: ' + lastAction.action.type);
+      }
     }
     this.updateActions();
   }
 
-  performSideEffectsForActionInPhase() {
-    const phase = this.state.phase;
-    const { player, action } = this.state.currTurnActions[this.state.currTurnActions.length - 1];
-    assert(action.type === 'Reveal');
-    if (phase === 'Challenged_Action') {
-      const nextPhase = this.getStateAfterChallenge();
-      this.state.resolutionActions.push({ type: 'Reveal', player: player, card: action.card });
-      if (nextPhase === 'Challenged_Action_Failed') {
-        // No more resolution actions to add
-      } else if (nextPhase === 'Challenged_Action_Succeeded') {
-        this.state.resolutionActions.push({ type: 'Discard', player: player, card: action.card });
-        this.state.resolutionActions.push({ type: 'Draw', player: player });
-      }
+  handleRevealAfterChallenge(player: number, choose: ChooseAction, challenge: PlayerAction) {
+    assert(choose.cards.length === 1);
+    const requiredCard = this.getCardForAction(
+      this.state.currTurnActions[this.state.currTurnActions.length - 1].action
+    );
+    if (choose.cards[0] === requiredCard) {
+      this.state.resolutionActions.push({ type: 'Discard', player, card: choose.cards[0] });
+      this.state.currTurnActions.push({
+        player: challenge.player,
+        action: { type: 'Revealing Influence', blockable: false, challengable: false },
+      });
     } else {
-      assert(false, 'Unmapped sideEffectState for phase: ' + phase);
+      const failedAction = this.state.currTurnActions.pop();
+      this.state.resolutionActions.push({ type: 'Flip', card: choose.cards[0], player });
+      if (this.state.currTurnActions.length > 0) {
+        this.resolveAction(this.state.currTurnActions.pop());
+      }
     }
+  }
+
+  handleRevealAfterRevealingInfluence(player: number, action: ChooseAction) {
+    assert(action.cards.length === 1);
+    this.state.resolutionActions.push({ type: 'Flip', player, card: action.cards[0] });
+    if (this.state.currTurnActions.length > 0) {
+      this.resolveAction(this.state.currTurnActions.pop());
+    }
+  }
+
+  handleRevealAfterExchange(player: number, action: ChooseAction) {
+    assert(action.cards.length === 2);
+    const cardsToReturn = action.cards;
+    cardsToReturn.map((card) => this.state.resolutionActions.push({ type: 'Discard', player, card }));
   }
 
   updateActions(): void {
     this.state.actions = this.getActions();
   }
 
-  getStateAfterChallenge() {
-    assert(this.state.currTurnActions[this.state.currTurnActions.length - 1].action.type === 'Reveal');
-    const revealAction = this.state.currTurnActions[this.state.currTurnActions.length - 1];
-    assert(revealAction.action.type === 'Reveal');
-    const challengeAction = this.state.currTurnActions[this.state.currTurnActions.length - 2];
-    assert(challengeAction.action.type === 'Challenge');
-    const challengedAction = this.state.currTurnActions[this.state.currTurnActions.length - 3];
-    const requiredCard = this.getCardForAction(challengedAction.action);
-    if (this.state.phase === 'Challenged_Action') {
-      if (revealAction.action.card === requiredCard) {
-        return 'Challenged_Action_Failed';
-      } else {
-        return 'Challenged_Action_Succeeded';
-      }
-    } else if (this.state.phase === 'Challenged_Block_Action') {
-      if (revealAction.action.card === requiredCard) {
-        return 'Challenged_Block_Action_Failed';
-      } else {
-        return 'Challenged_Block_Action_Succeeded';
-      }
-    } else {
-      assert(false, 'Invalid phase: ' + this.state.phase);
+  // Resolve the action on top of the stack.
+  resolve(): void {
+    assert(this.state.currTurnActions.length > 0, 'Expect > 0 actions on stack before resolving');
+    this.resolveAction(this.state.currTurnActions.pop());
+    this.updateActions();
+  }
+
+  // Resolve a given action and generate the resolution actions
+  resolveAction({ player, action }: PlayerAction) {
+    switch (action.type) {
+      case 'Assassinate':
+        this.state.currTurnActions.push({
+          player: action.target,
+          action: { type: 'Revealing Influence', blockable: false, challengable: false },
+        });
+        break;
+      case 'Block':
+        const blockedAction = this.state.currTurnActions.pop();
+        break;
+      case 'Challenge':
+        const challengedAction = this.state.currTurnActions.pop();
+        break;
+      case 'Coup':
+        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
+        this.state.currTurnActions.push({
+          player: action.target,
+          action: { type: 'Revealing Influence', blockable: false, challengable: false },
+        });
+        break;
+      case 'Exchange':
+        this.state.resolutionActions.push({ type: 'Draw', player });
+        this.state.resolutionActions.push({ type: 'Draw', player });
+        this.state.currTurnActions.push({
+          player,
+          action: { type: 'Exchanging Influence', blockable: false, challengable: false },
+        });
+        break;
+      case 'Foreign Aid':
+        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
+        break;
+      case 'Income':
+        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 1 });
+        break;
+      case 'Steal':
+        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
+        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: action.target, coins: 2 });
+        break;
+      case 'Tax':
+        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
+        break;
+      default:
+        assert(false, 'Unhandled action type: ' + action.type);
     }
   }
 
-  // Resolve the current action and generate the resolution actions
-  resolveAction() {
-    assert(this.state.currTurnActions.length > 0);
-    const actionStackSize = this.state.currTurnActions.length;
-    const actionOnTopOfStack = this.state.currTurnActions[actionStackSize - 1];
-    const phase = this.state.phase;
-    if (phase === 'Action') {
-      assert(false, 'Should never call resolve action while in Action phase');
-    } else if (phase === 'Action_Played') {
-      this.resolveActionPlayedPhaseAction(actionOnTopOfStack); // Steal, Tax, Income, Assassinate etc action
-    } else if (phase === 'Blocked_Action') {
-      this.resolveBlockedActionPhaseAction(actionOnTopOfStack); // Challenged_Block
-    } else if (phase === 'Pre_Resolving') {
-      this.resolvePreResolvingPhaseAction(actionOnTopOfStack); // Reveal
-    } else if (phase === 'Challenged_Action_Failed') {
-      // Someone challenged an ACTION phase action and was wrong. They now loses a revealed card.
-      this.resolveChallengedActionFailedPhaseAction(actionOnTopOfStack);
-    } else if (phase === 'Challenged_Action_Succeeded') {
-      // Someone challenged an ACTION phase action and was right. Original player now loses a revealed card.
-      this.resolveChallengedActionSucceededPhaseAction(actionOnTopOfStack);
-    } else if (phase === 'Challenged_Block_Action_Failed') {
-      // Someone challenged an BLOCKED_ACTION phase action and was wrong. They now loses a revealed card.
-      this.resolveChallengedBlockedActionFailedPhaseAction(actionOnTopOfStack);
-    } else if (phase === 'Challenged_Block_Action_Succeeded') {
-      // Someone challenged an BLOCKED_ACTION phase action and was right. Blocking player now loses a revealed card.
-      this.resolveChallengedBlockedActionFailedPhaseAction(actionOnTopOfStack);
-    } else if (phase === 'Challenged_Action_Failed_Pre_Resolve') {
-      this.resolveChallenedActionFailedPreResolvePhaseAction(actionOnTopOfStack);
-    } else {
-      assert(false, 'No mapping to resolve action in phase: ' + phase);
-    }
-  }
-
-  getActions(): Array<PlayableActions> {
-    const phase = this.state.phase;
+  getActions(): Array<AvailableActions> {
     return this.state.players.map((_, index) => {
-      if (this.state.phase === 'Action') {
-        return this.getActionPhaseActions(index);
-      } else if (phase === 'Action_Played') {
-        return this.getActionPlayedPhaseActions(index);
-      } else if (phase === 'Blocked_Action') {
-        return this.getBlockedActionPhaseActions(index);
-      } else if (phase === 'Challenged_Action') {
-        return this.getChallengedActionPhaseActions(index);
-      } else if (phase === 'Challenged_Block_Action') {
-        return this.getChallengedBlockActionPhaseActions(index);
-      } else if (phase === 'Challenged_Action_Failed') {
-        return this.getChallengedActionFailedPhaseActions(index);
-      } else if (phase === 'Challenged_Action_Succeeded') {
-        return this.getChallengedActionSucceededPhaseActions(index);
-      } else if (phase === 'Challenged_Block_Action_Failed') {
-        return this.getChallengedBlockActionFailedPhaseActions(index);
-      } else if (phase === 'Pre_Resolving') {
-        return this.getPreResolvingActions(index);
+      if (this.state.currTurnActions.length === 0) {
+        return this.getEmptyStackActions(index);
+      }
+      const { player, action } = this.state.currTurnActions[this.state.currTurnActions.length - 1];
+      switch (action.type) {
+        case 'Assassinate':
+        case 'Coup':
+        case 'Exchange':
+        case 'Foreign Aid':
+        case 'Income':
+        case 'Steal':
+        case 'Tax':
+          return this.getActionOnStackActions(index, { player, action });
+        case 'Exchanging Influence':
+          return this.getExchangingOnStackActions(index, { player, action });
+        case 'Block':
+          return this.getBlockActionOnStackActions(index, { player, action });
+        case 'Challenge':
+          return this.getChallengeOnStackActions(index, { player, action });
+        case 'Revealing Influence':
+          return this.getRevealingInfluenceOnStackActions(index, { player, action });
+        default:
+          assert(false, 'Unexpected action type on top of stack');
       }
     });
   }
 
-  // Get actions available to a given player in the ACTION phase
-  getActionPhaseActions(playerIndex: number): ActionPhaseActions {
-    // All players that aren't you are valid targets for actions.
-    const targets = this.state.players.filter((p, index) => p.index !== playerIndex).map((p) => p.index);
-    // No actions available if it's not your turn.
-    if (this.state.currTurn !== playerIndex) {
+  // Get available actions when there are no actions on the stack.
+  getEmptyStackActions(playerIndex: number): AvailableActions {
+    if (playerIndex !== this.state.currTurn) {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
-    // General actions for player
+    // All players that aren't you are valid targets for actions.
+    const targets = this.state.players.filter((p, _) => p.index !== playerIndex).map((p) => p.index);
+
     const generalActions = [
       { type: 'Income', blockable: false, challengable: false },
       { type: 'Foreign Aid', blockable: true, challengable: false },
       // Add one coup action for each player that is not youself.
       ...targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i })),
-    ] as Array<Action>;
+    ] as Array<GeneralAction>;
 
     // characterActions for player
     const characterActions = flatten(
@@ -326,125 +280,95 @@ export default class Coup {
     return { generalActions, characterActions, bluffActions };
   }
 
-  // Get actions available to a player in the ACTION_PLAYED phase
-  getActionPlayedPhaseActions(playerIndex: number): ActionPlayedPhaseActions {
-    const actionOnStack = this.state.currTurnActions[0].action;
-    // No actions available if it's your turn.
-    if (this.state.currTurn === playerIndex) {
-      return { challengeActions: [], blockActions: [], bluffBlockActions: [] };
+  // Get actions available when the is an action on the stack.
+  getActionOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
+    if (actionOnStack.player === playerIndex) {
+      return { generalActions: [], characterActions: [], bluffActions: [] };
     }
-    const challengeActions = actionOnStack.challengable
+
+    const generalActions = actionOnStack.action.challengable
       ? ([{ type: 'Challenge', blockable: false, challengable: false }] as Array<ChallengeAction>)
       : [];
 
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
-    const blockActions = this.getAvailableBlockActionsForCards(actionOnStack, usableCards);
+    const characterActions = this.getAvailableBlockActionsForCards(actionOnStack.action, usableCards);
 
     const cardsPlayerDoesNotHave = this.getCardsPlayerDoesNotHave(playerIndex);
-    const bluffBlockActions = this.getAvailableBlockActionsForCards(actionOnStack, cardsPlayerDoesNotHave);
+    const bluffActions = this.getAvailableBlockActionsForCards(actionOnStack.action, cardsPlayerDoesNotHave);
 
-    return { challengeActions, blockActions, bluffBlockActions };
+    return { generalActions, characterActions, bluffActions };
   }
 
-  // Get actions available to a player in the BLOCKED_ACTION phase.
-  getBlockedActionPhaseActions(playerIndex: number): BlockedActionPhaseActions {
-    const blockAction = this.state.currTurnActions[1];
-    assert(blockAction.action.type === 'Block', 'Expected Block action but found: ' + blockAction.action.type);
-    if (playerIndex === blockAction.player) {
-      // Can't challenge your own block.
-      return { challengeActions: [] };
+  getExchangingOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
+    if (playerIndex !== actionOnStack.player) {
+      return { generalActions: [], characterActions: [], bluffActions: [] };
     }
-    return { challengeActions: [{ type: 'Challenge', blockable: false, challengable: false }] };
+    const cards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+    const deck0 = this.state.deck[0];
+    const deck1 = this.state.deck[1];
+    cards.push(deck0, deck1);
+    const cardCombinations = uniqueCombinations(cards);
+    const actions = cardCombinations.map((cards) => ({
+      type: 'Choose',
+      blockable: false,
+      challengable: false,
+      cards,
+    })) as Array<ChooseAction>;
+    const chooseActions = {
+      cards,
+      actions,
+    };
+    return { generalActions: [], characterActions: [], bluffActions: [], chooseActions };
   }
 
-  // Get action available to a player in the CHALLENGED_ACTION phase.
-  getChallengedActionPhaseActions(playerIndex: number): ChallengedActionPhaseActions {
-    const challengedAction = this.state.currTurnActions[0];
-    assert(challengedAction.action.challengable);
-    // Only the player who was challenged can respond.
+  getBlockActionOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
+    if (playerIndex === actionOnStack.player) {
+      return { generalActions: [], characterActions: [], bluffActions: [] };
+    }
+    return {
+      generalActions: [{ type: 'Challenge', blockable: false, challengable: false }],
+      characterActions: [],
+      bluffActions: [],
+    };
+  }
+
+  getChallengeOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
+    const challengedAction = this.state.currTurnActions[this.state.currTurnActions.length - 2];
     if (challengedAction.player !== playerIndex) {
-      return { revealActions: [] };
+      return { generalActions: [], characterActions: [], bluffActions: [] };
     }
-    const revealActions = this.state.hands[playerIndex]
-      .filter((card) => !card.flipped)
-      .map((card) => card.card)
-      .map((card) => ({ type: 'Reveal', blockable: false, challengable: false, card })) as Array<RevealAction>;
-    return { revealActions };
+
+    const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+    const actions = usableCardsInHand.map((card) => ({
+      type: 'Choose',
+      blockable: false,
+      challengable: false,
+      cards: [card],
+    })) as Array<ChooseAction>;
+    const chooseActions = {
+      cards: usableCardsInHand,
+      actions,
+    };
+    return { generalActions: [], characterActions: [], bluffActions: [], chooseActions };
   }
 
-  getChallengedBlockActionPhaseActions(playerIndex: number): ChallengedBlockActionPhaseActions {
-    const challengedBlockAction = this.state.currTurnActions[1];
-    assert(challengedBlockAction.action.type === 'Block');
-    if (challengedBlockAction.player !== playerIndex) {
-      return { revealActions: [] };
+  getRevealingInfluenceOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
+    if (actionOnStack.player !== playerIndex) {
+      return { generalActions: [], characterActions: [], bluffActions: [] };
     }
-    const revealActions = this.state.hands[playerIndex]
-      .filter((card) => !card.flipped)
-      .map((card) => card.card)
-      .map((card) => ({ type: 'Reveal', blockable: false, challengable: false, card })) as Array<RevealAction>;
-    return { revealActions };
-  }
 
-  // Player challenged another players ACTION phase action and was wrong. They now loses a card.
-  getChallengedActionFailedPhaseActions(playerIndex: number): ChallengedActionFailedPhaseActions {
-    const challengeAction = this.state.currTurnActions[this.state.currTurnActions.length - 2];
-    assert(challengeAction.action.type === 'Challenge');
-    if (playerIndex !== challengeAction.player) {
-      return { revealActions: [] };
-    }
-    const revealActions = this.state.hands[playerIndex]
-      .filter((card) => !card.flipped)
-      .map((card) => card.card)
-      .map((card) => ({ type: 'Reveal', blockable: false, challengable: false, card })) as Array<RevealAction>;
-    return { revealActions };
-  }
-
-  // Player challenged another players BLOCKED_ACTION phase action and was wrong. They now loses a card.
-  getChallengedBlockActionFailedPhaseActions(playerIndex: number): ChallengedBlockActionPhaseActions {
-    const challengeAction = this.state.currTurnActions[this.state.currTurnActions.length - 2];
-    assert(challengeAction.action.type === 'Challenge');
-    if (playerIndex !== challengeAction.player) {
-      return { revealActions: [] };
-    }
-    const revealActions = this.state.hands[playerIndex]
-      .filter((card) => !card.flipped)
-      .map((card) => card.card)
-      .map((card) => ({ type: 'Reveal', blockable: false, challengable: false, card })) as Array<RevealAction>;
-    return { revealActions };
-  }
-
-  // Player challenged another players ACTION phase action and was right. Player now loses a card.
-  getChallengedActionSucceededPhaseActions(playerIndex: number): ChallengedActionSucceededPhaseActions {
-    const challengedAction = this.state.currTurnActions[this.state.currTurnActions.length - 3];
-    if (playerIndex !== challengedAction.player) {
-      return { revealActions: [] };
-    }
-    const revealActions = this.state.hands[playerIndex]
-      .filter((card) => !card.flipped)
-      .map((card) => card.card)
-      .map((card) => ({ type: 'Reveal', blockable: false, challengable: false, card })) as Array<RevealAction>;
-    return { revealActions };
-  }
-
-  getPreResolvingActions(playerIndex: number): PreResolvingActions {
-    const resolvingAction = this.state.currTurnActions[0];
-    if (
-      (resolvingAction.action.type === 'Assassinate' || resolvingAction.action.type === 'Coup') &&
-      playerIndex === resolvingAction.action.target
-    ) {
-      const revealActions = this.state.hands[resolvingAction.action.target]
-        .filter((card) => !card.flipped)
-        .map((card) => card.card)
-        .map((card) => ({ type: 'Reveal', blockable: false, challengable: false, card })) as Array<RevealAction>;
-      return { revealActions };
-    } else if (resolvingAction.action.type === 'Exchange' && playerIndex === resolvingAction.player) {
-      const discardActions = this.state.hands[resolvingAction.player]
-        .filter((card) => !card.flipped)
-        .map((card) => card.card)
-        .map((card) => ({ type: 'Discard', blockable: false, challengable: false, card })) as Array<DiscardAction>;
-      return { discardActions };
-    }
-    return { revealActions: [] };
+    const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+    const actions = usableCardsInHand.map((card) => ({
+      type: 'Choose',
+      blockable: false,
+      challengable: false,
+      cards: [card],
+    })) as Array<ChooseAction>;
+    const chooseActions = {
+      cards: usableCardsInHand,
+      actions,
+    };
+    return { generalActions: [], characterActions: [], bluffActions: [], chooseActions };
   }
 
   getAvailableBlockActionsForCards(actionToBlock: Action, cardsToBlockWith: Array<Card>): Array<BlockAction> {
@@ -478,172 +402,11 @@ export default class Coup {
     }
   }
 
-  resolveActionPlayedPhaseAction({ player, action }: PlayerAction) {
-    switch (action.type) {
-      case 'Assassinate':
-        // Let the assassinated player choose which card to flip
-        this.state.phase = 'Pre_Resolving';
-        break;
-      case 'Coup':
-        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
-        // Let coup'd player choose which card to flip
-        this.state.phase = 'Pre_Resolving';
-        break;
-      case 'Exchange':
-        // Draw two return 2
-        this.state.phase = 'Pre_Resolving';
-        break;
-      case 'Foreign Aid':
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
-        this.state.phase = 'Resolving';
-        break;
-      case 'Income':
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 1 });
-        this.state.phase = 'Resolving';
-        break;
-      case 'Steal':
-        this.state.resolutionActions.push({
-          type: 'Steal',
-          gainingPlayer: player,
-          losingPlayer: action.target,
-          coins: 2,
-        });
-        this.state.phase = 'Resolving';
-        break;
-      case 'Tax':
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
-        this.state.phase = 'Resolving';
-        break;
-    }
-  }
-
-  resolveBlockedActionPhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Block');
-    this.state.resolutionActions.push({ type: 'Blocked', blockingPlayer: player });
-    this.state.phase = 'Resolving';
-  }
-
-  resolvePreResolvingPhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Reveal');
-    const cardToRevealIndex = this.getIndexOfUnrevealedCard(player, (action as RevealAction).card);
-    // Flip the revealed card targetted player.
-    this.state.resolutionActions.push({
-      type: 'Reveal',
-      player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    const originalAction = this.state.currTurnActions[0];
-    switch (originalAction.action.type) {
-      case 'Assassinate':
-        break;
-      case 'Coup':
-        break;
-      case 'Exchange':
-        break;
-    }
-    // this.resolveActionPlayedPhaseAction(originalAction)
-    this.state.phase = 'Resolving';
-  }
-
-  resolveChallengedActionFailedPhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Reveal');
-    const originalAction = this.state.currTurnActions[0];
-    const cardToRevealIndex = this.getIndexOfUnrevealedCard(originalAction.player, (action as RevealAction).card);
-    assert(cardToRevealIndex > -1, 'Player has not valid card to reveal');
-    // Flip the revealed card of the challenger.
-    this.state.resolutionActions.push({
-      type: 'Reveal',
-      player: originalAction.player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    this.state.resolutionActions.push({
-      type: 'Discard',
-      player: originalAction.player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    this.state.resolutionActions.push({
-      type: 'Draw',
-      player: originalAction.player,
-    });
-
-    // Resolve the original action
-    // this.resolveActionPlayedPhaseAction(originalAction);
-  }
-
-  resolveChallengedActionSucceededPhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Reveal');
-    const originalAction = this.state.currTurnActions[0];
-    assert(player === originalAction.player, 'Revealing player should be the same as original action player');
-    const cardToRevealIndex = this.getIndexOfUnrevealedCard(originalAction.player, (action as RevealAction).card);
-    assert(cardToRevealIndex > -1, 'Player has not valid card to reveal');
-    // Flip the revealed card of the player of the original action.
-    this.state.resolutionActions.push({
-      type: 'Reveal',
-      player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    this.state.phase = 'Resolving';
-  }
-
-  resolveChallengedBlockedActionFailedPhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Reveal');
-    const blockAction = this.state.currTurnActions[1];
-    const cardToRevealIndex = this.getIndexOfUnrevealedCard(player, (action as RevealAction).card);
-    assert(cardToRevealIndex > -1, 'Player has not valid card to reveal');
-    // Flip the revealed card of the blocker.
-    this.state.resolutionActions.push({
-      type: 'Reveal',
-      player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    this.state.resolutionActions.push({
-      type: 'Draw',
-      player,
-    });
-    this.state.resolutionActions.push({
-      type: 'Discard',
-      player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    // Resolve the block action
-    this.resolveBlockedActionPhaseAction(blockAction);
-  }
-
-  resolveChallenedActionFailedPreResolvePhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Reveal');
-    const cardToRevealIndex = this.getIndexOfUnrevealedCard(player, (action as RevealAction).card);
-    assert(cardToRevealIndex > -1, 'Player has not valid card to reveal');
-    this.state.resolutionActions.push({
-      type: 'Reveal',
-      player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    this.state.phase = 'Pre_Resolving';
-  }
-
-  resolveChallengedBlockedActionSucceededPhaseAction({ player, action }: PlayerAction) {
-    assert(action.type === 'Reveal');
-    const originalAction = this.state.currTurnActions[0];
-    const blockAction = this.state.currTurnActions[1];
-    assert(blockAction.player === player, 'Revealing player should be the same as the blocking player');
-    assert(blockAction.action.type === 'Block');
-    const cardToRevealIndex = this.getIndexOfUnrevealedCard(player, (action as RevealAction).card);
-    assert(cardToRevealIndex > -1, 'Player has not valid card to reveal');
-    // Flip the revealed card of the player with the block action.
-    this.state.resolutionActions.push({
-      type: 'Reveal',
-      player,
-      card: this.state.hands[player][cardToRevealIndex].card,
-    });
-    // Resolve the original action
-    this.resolveActionPlayedPhaseAction(originalAction);
-  }
-
   drawCardFromDeck() {
     return this.state.deck.shift();
   }
 
-  getActionForCharacter(character: Card, targets: Array<number>): Array<Action> {
+  getActionForCharacter(character: Card, targets: Array<number>): Array<CharacterAction> {
     switch (character) {
       case 'Captain':
         return targets.map((i) => ({ type: 'Steal', blockable: true, challengable: true, target: i }));
@@ -713,6 +476,20 @@ function shuffle(array: Array<any>) {
 
 function flatten<T>(array: Array<Array<T>>): Array<T> {
   return array.reduce((res, curr) => res.concat(...curr), []);
+}
+
+function dedupe<T>(array: Array<[T, T]>): Array<[T, T]> {
+  return array.filter(
+    ([e1, e2], index, self) =>
+      index === self.findIndex(([e3, e4]) => (e1 === e3 && e2 === e4) || (e1 === e4 && e2 === e3))
+  );
+}
+
+// Given an array of things, return an array of each unique combination of the elements. Note: (a,b) == (b,a) for purposes of uniqueness.
+function uniqueCombinations<T>(array: Array<T>): Array<[T, T]> {
+  const temp = [...array];
+  const combinations = temp.reduce((acc, v, i) => acc.concat(temp.slice(i + 1).map((w) => [v, w])), []);
+  return dedupe(combinations);
 }
 
 function assert(condition: boolean, message?: string): asserts condition {
