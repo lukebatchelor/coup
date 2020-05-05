@@ -3,12 +3,14 @@ import { initialiseSocket, safeEmit, safeOn, safeOff } from '../sockets';
 
 type SocketContextType = {
   _socket: SocketIOClient.Socket;
+  initialised: boolean;
   emit: typeof safeEmit;
   on: typeof safeOn;
   off: typeof safeOff;
 };
 const defaultValue: SocketContextType = {
   _socket: null,
+  initialised: false,
   emit: safeEmit,
   on: safeOn,
   off: safeOff,
@@ -25,6 +27,7 @@ const SocketProvider: React.FC = (props) => {
 
   const value = {
     _socket: socket,
+    initialised: !!socket,
     emit: safeEmit,
     on: safeOn,
     off: safeOff,

@@ -30,7 +30,7 @@ export function App() {
   const socket = useContext(SocketContext);
 
   useEffect(() => {
-    if (socket) {
+    if (socket.initialised) {
       socket.on('welcome', (data) => {
         console.log('welcome', data);
         const { nickName, roomCode, host, inGame } = data;
