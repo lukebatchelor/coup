@@ -44,24 +44,13 @@ function stack() {
 console.log('READY');
 // coup.loadJson(challenge_action_failed);
 
-coup.doAction(0, { type: 'Assassinate', blockable: true, challengable: true, target: 1 });
-coup.resolve();
-const a = coup.state.actions[1].chooseActions.actions[0];
-coup.doAction(1, a);
-coup.resolve();
+// Assassinate
+// coup.doAction(0, { type: 'Assassinate', blockable: true, challengable: true, target: 1 });
+// coup.resolve();
+// coup.doAction(1, coup.state.actions[1].chooseActions.actions[0]);
+// coup.resolve();
 
-coup.doAction(1, { type: 'Assassinate', blockable: true, challengable: true, target: 0 });
-coup.resolve();
-const b = coup.state.actions[0].chooseActions.actions[0];
-coup.doAction(0, b);
-coup.resolve();
-
-coup.doAction(0, { type: 'Income', blockable: false, challengable: false });
-coup.resolve();
-coup.resolve();
-
-coup.doAction(1, { type: 'Assassinate', blockable: true, challengable: true, target: 0 });
-coup.resolve();
-const c = coup.state.actions[0].chooseActions.actions[0];
-coup.doAction(0, c);
-coup.resolve();
+// Tax
+// coup.doAction(0, { type: 'Tax', blockable: false, challengable: true });
+// coup.resolve();
+// coup.resolve();

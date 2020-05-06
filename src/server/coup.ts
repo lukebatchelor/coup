@@ -285,6 +285,7 @@ export default class Coup {
         this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 1 });
         break;
       case 'Steal':
+        const coins = Math.min(2, this.state.players[action.target].coins);
         this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
         this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: action.target, coins: 2 });
         break;
