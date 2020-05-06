@@ -37,11 +37,31 @@ function actions2() {
   }
 }
 
+function stack() {
+  return coup.state.actionStack;
+}
+
 console.log('READY');
 // coup.loadJson(challenge_action_failed);
-coup.doAction(0, { type: 'Exchange', blockable: false, challengable: true });
+
+coup.doAction(0, { type: 'Assassinate', blockable: true, challengable: true, target: 1 });
 coup.resolve();
-actions();
-hands();
-coup.state.deck[0];
-coup.state.deck[1];
+const a = coup.state.actions[1].chooseActions.actions[0];
+coup.doAction(1, a);
+coup.resolve();
+
+coup.doAction(1, { type: 'Assassinate', blockable: true, challengable: true, target: 0 });
+coup.resolve();
+const b = coup.state.actions[0].chooseActions.actions[0];
+coup.doAction(0, b);
+coup.resolve();
+
+coup.doAction(0, { type: 'Income', blockable: false, challengable: false });
+coup.resolve();
+coup.resolve();
+
+coup.doAction(1, { type: 'Assassinate', blockable: true, challengable: true, target: 0 });
+coup.resolve();
+const c = coup.state.actions[0].chooseActions.actions[0];
+coup.doAction(0, c);
+coup.resolve();

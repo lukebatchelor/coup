@@ -1,3 +1,5 @@
+import isEqual from 'lodash.isequal';
+
 type Player = { index: number; coins: number; nickname: string; id: string; eliminated: boolean };
 
 type State = {
@@ -113,6 +115,10 @@ export default class Coup {
   }
 
   doAction(player: number, action: Action): void {
+    if (!this.isActionLegal(player, action)) {
+      console.log('Invalid action');
+      return;
+    }
     if (action.type !== 'Choose') {
       this.state.actionStack.push({ player, action } as PlayerAction);
     } else {
@@ -200,6 +206,8 @@ export default class Coup {
           );
           assert(index !== -1, `Can't flip card ${card} in hand ${JSON.stringify(this.state.hands[player])}`);
           this.state.hands[player][index].flipped = true;
+          const eliminated = this.state.hands[player].every((card) => card.flipped);
+          this.state.players[player].eliminated = eliminated;
           break;
         }
         case 'Gain Coins': {
@@ -241,9 +249,19 @@ export default class Coup {
         break;
       case 'Block':
         const blockedAction = this.state.actionStack.pop();
+        this.state.actionStack.push({
+          player: this.state.currTurn,
+          action: { type: 'Resolving', blockable: false, challengable: false },
+        });
         break;
       case 'Challenge':
         const challengedAction = this.state.actionStack.pop();
+        if (this.state.actionStack.length === 0) {
+          this.state.actionStack.push({
+            player: this.state.currTurn,
+            action: { type: 'Resolving', blockable: false, challengable: false },
+          });
+        }
         break;
       case 'Coup':
         this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
@@ -334,8 +352,6 @@ export default class Coup {
     const generalActions = [
       { type: 'Income', blockable: false, challengable: false },
       { type: 'Foreign Aid', blockable: true, challengable: false },
-      // Add one coup action for each player that is not youself.
-      ...targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i })),
     ] as Array<GeneralAction>;
 
     // Add coup actions if player has enough coins.
@@ -535,8 +551,24 @@ export default class Coup {
   }
 
   getCardsPlayerDoesNotHave(playerIndex: number): Array<Card> {
-    const playersCards = this.state.hands[playerIndex].map((card) => card.card);
+    const playersCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
     return allCards.filter((card) => !playersCards.includes(card));
+  }
+
+  isActionLegal(player: number, action: Action): boolean {
+    const allAvailableActions = [] as Array<Action>;
+    const availableActions = this.state.actions[player];
+    allAvailableActions.push(...availableActions.generalActions);
+    allAvailableActions.push(...availableActions.characterActions);
+    allAvailableActions.push(...availableActions.bluffActions);
+    if (availableActions.chooseActions) {
+      allAvailableActions.push(...availableActions.chooseActions.actions);
+    }
+    const valid = allAvailableActions.some((a) => isEqual(a, action));
+    if (!valid) {
+      console.log(JSON.stringify(allAvailableActions) + ' does not include' + JSON.stringify(action));
+    }
+    return valid;
   }
 
   checkForWinner(): boolean {
