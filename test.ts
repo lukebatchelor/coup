@@ -45,17 +45,17 @@ console.log('READY');
 // coup.loadJson(challenge_action_failed);
 
 // Assassinate
-coup.doAction(0, { type: 'Assassinate', blockable: true, challengable: true, target: 1 });
-coup.doAction(1, { type: 'Block', blockable: false, challengable: true, card: 'Contessa' });
-coup.doAction(0, { type: 'Challenge', blockable: false, challengable: false });
+coup.doAction(0, { type: 'Assassinate', target: 1 });
+coup.doAction(1, { type: 'Block', card: 'Contessa' });
+coup.doAction(0, { type: 'Challenge' });
 
 // Assassinate
-// coup.doAction(0, { type: 'Assassinate', blockable: true, challengable: true, target: 1 });
+// coup.doAction(0, { type: 'Assassinate',  target: 1 });
 // coup.resolve();
 // coup.doAction(1, coup.state.actions[1].chooseActions.actions[0]);
 // coup.resolve();
 
 // Tax
-// coup.doAction(0, { type: 'Tax', blockable: false, challengable: true });
+// coup.doAction(0, { type: 'Tax', });
 // coup.resolve();
 // coup.resolve();

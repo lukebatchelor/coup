@@ -31,28 +31,28 @@ type ResolutionAction =
   | { type: 'Discard'; player: number; card: Card };
 
 // General Actions
-type IncomeAction = { type: 'Income'; blockable: false; challengable: false };
-type ForeinAidAction = { type: 'Foreign Aid'; blockable: true; challengable: false };
-type CoupAction = { type: 'Coup'; blockable: false; challengable: false; target: number };
-type ChallengeAction = { type: 'Challenge'; blockable: false; challengable: false };
-type RevealAction = { type: 'Reveal'; blockable: false; challengable: false; card: Card };
+type IncomeAction = { type: 'Income' };
+type ForeinAidAction = { type: 'Foreign Aid' };
+type CoupAction = { type: 'Coup'; target: number };
+type ChallengeAction = { type: 'Challenge' };
+type RevealAction = { type: 'Reveal'; card: Card };
 
 // Character/Bluff Actions
-type TaxAction = { type: 'Tax'; blockable: false; challengable: true };
-type AssassinateAction = { type: 'Assassinate'; blockable: true; challengable: true; target: number };
-type ExchangeAction = { type: 'Exchange'; blockable: false; challengable: true };
-type StealAction = { type: 'Steal'; blockable: true; challengable: true; target: number };
-type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: Card };
+type TaxAction = { type: 'Tax' };
+type AssassinateAction = { type: 'Assassinate'; target: number };
+type ExchangeAction = { type: 'Exchange' };
+type StealAction = { type: 'Steal'; target: number };
+type BlockAction = { type: 'Block'; card: Card };
 
 // Other actions that can be on the stack but are not put there by players.
-type RevealingInfluence = { type: 'Revealing Influence'; blockable: false; challengable: false };
-type Exchanging = { type: 'Exchanging Influence'; blockable: false; challengable: false };
-type Resolving = { type: 'Resolving'; blockable: false; challengable: false };
-type DeclareWinner = { type: 'Declare Winner'; blockable: false; challengable: false };
+type RevealingInfluence = { type: 'Revealing Influence' };
+type Exchanging = { type: 'Exchanging Influence' };
+type Resolving = { type: 'Resolving' };
+type DeclareWinner = { type: 'Declare Winner' };
 type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner;
 
 // ChooseAction - used after assassinate/coup/challenge/exchange
-type ChooseAction = { type: 'Choose'; blockable: false; challengable: false; cards: Array<Card> };
+type ChooseAction = { type: 'Choose'; cards: Array<Card> };
 
 type GeneralAction = IncomeAction | ForeinAidAction | CoupAction | ChallengeAction | RevealAction;
 type CharacterAction = TaxAction | AssassinateAction | ExchangeAction | StealAction | BlockAction;
@@ -145,7 +145,7 @@ export default class Coup {
       this.state.resolutionActions.push({ type: 'Draw', player });
       this.state.actionStack.push({
         player: challenge.player,
-        action: { type: 'Revealing Influence', blockable: false, challengable: false },
+        action: { type: 'Revealing Influence' },
       });
     } else {
       const failedAction = this.state.actionStack.pop();
@@ -174,7 +174,7 @@ export default class Coup {
     if (this.state.actionStack.length === 0 && this.state.resolutionActions.length > 0) {
       this.state.actionStack.push({
         player: this.state.currTurn,
-        action: { type: 'Resolving', blockable: false, challengable: false },
+        action: { type: 'Resolving' },
       });
     }
     this.state.actions = this.getActions();
@@ -246,14 +246,14 @@ export default class Coup {
       case 'Assassinate':
         this.state.actionStack.push({
           player: action.target,
-          action: { type: 'Revealing Influence', blockable: false, challengable: false },
+          action: { type: 'Revealing Influence' },
         });
         break;
       case 'Block':
         const blockedAction = this.state.actionStack.pop();
         this.state.actionStack.push({
           player: this.state.currTurn,
-          action: { type: 'Resolving', blockable: false, challengable: false },
+          action: { type: 'Resolving' },
         });
         break;
       case 'Challenge':
@@ -261,7 +261,7 @@ export default class Coup {
         if (this.state.actionStack.length === 0) {
           this.state.actionStack.push({
             player: this.state.currTurn,
-            action: { type: 'Resolving', blockable: false, challengable: false },
+            action: { type: 'Resolving' },
           });
         }
         break;
@@ -269,7 +269,7 @@ export default class Coup {
         this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
         this.state.actionStack.push({
           player: action.target,
-          action: { type: 'Revealing Influence', blockable: false, challengable: false },
+          action: { type: 'Revealing Influence' },
         });
         break;
       case 'Exchange':
@@ -277,7 +277,7 @@ export default class Coup {
         this.state.resolutionActions.push({ type: 'Draw', player });
         this.state.actionStack.push({
           player,
-          action: { type: 'Exchanging Influence', blockable: false, challengable: false },
+          action: { type: 'Exchanging Influence' },
         });
         break;
       case 'Foreign Aid':
@@ -348,18 +348,15 @@ export default class Coup {
 
     if (this.state.players[playerIndex].coins > 9) {
       // Player _has_ to play a coup.
-      const coupActions = targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i }));
+      const coupActions = targets.map((i) => ({ type: 'Coup', target: i }));
       return { generalActions: coupActions as Array<GeneralAction>, characterActions: [], bluffActions: [] };
     }
 
-    const generalActions = [
-      { type: 'Income', blockable: false, challengable: false },
-      { type: 'Foreign Aid', blockable: true, challengable: false },
-    ] as Array<GeneralAction>;
+    const generalActions = [{ type: 'Income' }, { type: 'Foreign Aid' }] as Array<GeneralAction>;
 
     // Add coup actions if player has enough coins.
     if (this.state.players[playerIndex].coins > 6) {
-      const coupActions = targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i }));
+      const coupActions = targets.map((i) => ({ type: 'Coup', target: i }));
       generalActions.push(...(coupActions as Array<GeneralAction>));
     }
 
@@ -384,8 +381,8 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
-    const generalActions = actionOnStack.action.challengable
-      ? ([{ type: 'Challenge', blockable: false, challengable: false }] as Array<ChallengeAction>)
+    const generalActions = this.isActionChallengable(actionOnStack.action)
+      ? ([{ type: 'Challenge' }] as Array<ChallengeAction>)
       : [];
 
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
@@ -424,7 +421,7 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
     return {
-      generalActions: [{ type: 'Challenge', blockable: false, challengable: false }],
+      generalActions: [{ type: 'Challenge' }],
       characterActions: [],
       bluffActions: [],
     };
@@ -519,9 +516,9 @@ export default class Coup {
       case 'Captain':
         return targets.map((i) => ({ type: 'Steal', blockable: true, challengable: true, target: i }));
       case 'Duke':
-        return [{ type: 'Tax', blockable: false, challengable: true }];
+        return [{ type: 'Tax' }];
       case 'Ambassador':
-        return [{ type: 'Exchange', blockable: false, challengable: true }];
+        return [{ type: 'Exchange' }];
       case 'Assassin':
         return targets.map((i) => ({
           type: 'Assassinate',
@@ -568,6 +565,50 @@ export default class Coup {
     return allCards.filter((card) => !playersCards.includes(card));
   }
 
+  isActionBlockable(action: Action) {
+    switch (action.type) {
+      case 'Assassinate':
+      case 'Foreign Aid':
+      case 'Steal':
+        return true;
+      case 'Block':
+      case 'Challenge':
+      case 'Choose':
+      case 'Coup':
+      case 'Declare Winner':
+      case 'Exchange':
+      case 'Exchanging Influence':
+      case 'Income':
+      case 'Resolving':
+      case 'Reveal':
+      case 'Revealing Influence':
+      case 'Tax':
+        return false;
+    }
+  }
+
+  isActionChallengable(action: Action) {
+    switch (action.type) {
+      case 'Assassinate':
+      case 'Exchange':
+      case 'Steal':
+      case 'Tax':
+        return true;
+      case 'Block':
+      case 'Challenge':
+      case 'Choose':
+      case 'Coup':
+      case 'Declare Winner':
+      case 'Exchanging Influence':
+      case 'Foreign Aid':
+      case 'Income':
+      case 'Resolving':
+      case 'Reveal':
+      case 'Revealing Influence':
+        return false;
+    }
+  }
+
   isActionLegal(player: number, action: Action): boolean {
     const allAvailableActions = [] as Array<Action>;
     const availableActions = this.state.actions[player];
@@ -591,7 +632,7 @@ export default class Coup {
       // We have a winner
       this.state.actionStack.push({
         player: uneliminatedPlayers[0].index,
-        action: { type: 'Declare Winner', blockable: false, challengable: false },
+        action: { type: 'Declare Winner' },
       });
       return true;
     }
