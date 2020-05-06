@@ -22,10 +22,11 @@ const fullDeck = allCards.reduce(function (result, curr) {
 
 // Actions
 
+type Flip = { type: 'Flip'; player: number; card: Card };
 type ResolutionAction =
   | { type: 'Gain Coins'; gainingPlayer: number; coins: number }
   | { type: 'Lose Coins'; losingPlayer: number; coins: number }
-  | { type: 'Flip'; player: number; card: Card }
+  | Flip
   | { type: 'Draw'; player: number }
   | { type: 'Discard'; player: number; card: Card };
 
@@ -141,6 +142,7 @@ export default class Coup {
     const requiredCard = this.getCardForAction(this.state.actionStack[this.state.actionStack.length - 1].action);
     if (choose.cards[0] === requiredCard) {
       this.state.resolutionActions.push({ type: 'Discard', player, card: choose.cards[0] });
+      this.state.resolutionActions.push({ type: 'Draw', player });
       this.state.actionStack.push({
         player: challenge.player,
         action: { type: 'Revealing Influence', blockable: false, challengable: false },
@@ -454,6 +456,16 @@ export default class Coup {
     }
 
     const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+
+    // Need to check if the player has any unresolved flips in the resolution queue.
+    const flippedCardsInResolutionActions = this.state.resolutionActions
+      .filter((a) => a.type === 'Flip' && a.player === playerIndex)
+      .map((a) => (a as Flip).card);
+    assert(flippedCardsInResolutionActions.length < 2);
+    if (flippedCardsInResolutionActions.length === 1) {
+      usableCardsInHand.splice(usableCardsInHand.indexOf(flippedCardsInResolutionActions[0]), 1);
+    }
+
     const actions = usableCardsInHand.map((card) => ({
       type: 'Choose',
       blockable: false,
