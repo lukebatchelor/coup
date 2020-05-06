@@ -1,11 +1,11 @@
-type Player = { index: number; coins: number; nickname: string; id: string };
+type Player = { index: number; coins: number; nickname: string; id: string; eliminated: boolean };
 
 type State = {
   players: Array<Player>;
   deck: Array<Card>;
   hands: Array<[CardInHand, CardInHand]>;
   currTurn: number;
-  currTurnActions: Array<PlayerAction>;
+  actionStack: Array<PlayerAction>;
   resolutionActions: Array<ResolutionAction>;
   actions: Array<AvailableActions>;
 };
@@ -44,7 +44,9 @@ type BlockAction = { type: 'Block'; blockable: false; challengable: true; card: 
 // Other actions that can be on the stack but are not put there by players.
 type RevealingInfluence = { type: 'Revealing Influence'; blockable: false; challengable: false };
 type Exchanging = { type: 'Exchanging Influence'; blockable: false; challengable: false };
-type OtherAction = RevealingInfluence | Exchanging;
+type Resolving = { type: 'Resolving'; blockable: false; challengable: false };
+type DeclareWinner = { type: 'Declare Winner'; blockable: false; challengable: false };
+type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner;
 
 // ChooseAction - used after assassinate/coup/challenge/exchange
 type ChooseAction = { type: 'Choose'; blockable: false; challengable: false; cards: Array<Card> };
@@ -75,6 +77,7 @@ export default class Coup {
       coins: 2,
       nickname,
       id,
+      eliminated: false,
     }));
     const deck = shuffle([...fullDeck]);
     // Give each player two cards to start with.
@@ -90,7 +93,7 @@ export default class Coup {
       deck,
       hands,
       currTurn: 0,
-      currTurnActions: [],
+      actionStack: [],
       resolutionActions: [],
       actions: [],
     };
@@ -111,9 +114,9 @@ export default class Coup {
 
   doAction(player: number, action: Action): void {
     if (action.type !== 'Choose') {
-      this.state.currTurnActions.push({ player, action } as PlayerAction);
+      this.state.actionStack.push({ player, action } as PlayerAction);
     } else {
-      const lastAction = this.state.currTurnActions.pop();
+      const lastAction = this.state.actionStack.pop();
       if (lastAction.action.type === 'Challenge') {
         this.handleRevealAfterChallenge(player, action, lastAction);
       } else if (lastAction.action.type === 'Revealing Influence') {
@@ -129,20 +132,18 @@ export default class Coup {
 
   handleRevealAfterChallenge(player: number, choose: ChooseAction, challenge: PlayerAction) {
     assert(choose.cards.length === 1);
-    const requiredCard = this.getCardForAction(
-      this.state.currTurnActions[this.state.currTurnActions.length - 1].action
-    );
+    const requiredCard = this.getCardForAction(this.state.actionStack[this.state.actionStack.length - 1].action);
     if (choose.cards[0] === requiredCard) {
       this.state.resolutionActions.push({ type: 'Discard', player, card: choose.cards[0] });
-      this.state.currTurnActions.push({
+      this.state.actionStack.push({
         player: challenge.player,
         action: { type: 'Revealing Influence', blockable: false, challengable: false },
       });
     } else {
-      const failedAction = this.state.currTurnActions.pop();
+      const failedAction = this.state.actionStack.pop();
       this.state.resolutionActions.push({ type: 'Flip', card: choose.cards[0], player });
-      if (this.state.currTurnActions.length > 0) {
-        this.resolveAction(this.state.currTurnActions.pop());
+      if (this.state.actionStack.length > 0) {
+        this.resolveAction(this.state.actionStack.pop());
       }
     }
   }
@@ -150,8 +151,8 @@ export default class Coup {
   handleRevealAfterRevealingInfluence(player: number, action: ChooseAction) {
     assert(action.cards.length === 1);
     this.state.resolutionActions.push({ type: 'Flip', player, card: action.cards[0] });
-    if (this.state.currTurnActions.length > 0) {
-      this.resolveAction(this.state.currTurnActions.pop());
+    if (this.state.actionStack.length > 0) {
+      this.resolveAction(this.state.actionStack.pop());
     }
   }
 
@@ -162,13 +163,70 @@ export default class Coup {
   }
 
   updateActions(): void {
+    if (this.state.actionStack.length === 0 && this.state.resolutionActions.length > 0) {
+      this.state.actionStack.push({
+        player: this.state.currTurn,
+        action: { type: 'Resolving', blockable: false, challengable: false },
+      });
+    }
     this.state.actions = this.getActions();
+  }
+
+  executeResolutionActions() {
+    for (var action of this.state.resolutionActions) {
+      const { type } = action;
+      console.log('Executing resolution action :' + JSON.stringify(action));
+      switch (action.type) {
+        case 'Discard': {
+          const { player, card } = action;
+          const index = this.state.hands[player].findIndex(
+            (cardInHand) => !cardInHand.flipped && cardInHand.card === card
+          );
+          assert(index !== -1, `Can't remove card ${card} from hand ${JSON.stringify(this.state.hands[player])}`);
+          this.state.hands[player].splice(index, 1);
+          break;
+        }
+        case 'Draw': {
+          assert(this.state.deck.length > 0);
+          const [card] = this.state.deck.splice(0, 1);
+          const { player } = action;
+          this.state.hands[player].push({ card, flipped: false });
+          break;
+        }
+        case 'Flip': {
+          const { player, card } = action;
+          const index = this.state.hands[player].findIndex(
+            (cardInHand) => !cardInHand.flipped && cardInHand.card === card
+          );
+          assert(index !== -1, `Can't flip card ${card} in hand ${JSON.stringify(this.state.hands[player])}`);
+          this.state.hands[player][index].flipped = true;
+          break;
+        }
+        case 'Gain Coins': {
+          const { gainingPlayer, coins } = action;
+          this.state.players[gainingPlayer].coins += coins;
+          break;
+        }
+        case 'Lose Coins': {
+          const { losingPlayer, coins } = action;
+          this.state.players[losingPlayer].coins -= coins;
+          break;
+        }
+        default:
+          assert(false, 'Unhandled action type: ' + type);
+      }
+    }
+    this.state.resolutionActions = [];
+    const gameOver = this.checkForWinner();
+    if (!gameOver) {
+      this.updateCurrTurn();
+    }
   }
 
   // Resolve the action on top of the stack.
   resolve(): void {
-    assert(this.state.currTurnActions.length > 0, 'Expect > 0 actions on stack before resolving');
-    this.resolveAction(this.state.currTurnActions.pop());
+    assert(this.state.actionStack.length > 0, 'Expect > 0 actions on stack before resolving');
+    this.resolveAction(this.state.actionStack.pop());
     this.updateActions();
   }
 
@@ -176,20 +234,20 @@ export default class Coup {
   resolveAction({ player, action }: PlayerAction) {
     switch (action.type) {
       case 'Assassinate':
-        this.state.currTurnActions.push({
+        this.state.actionStack.push({
           player: action.target,
           action: { type: 'Revealing Influence', blockable: false, challengable: false },
         });
         break;
       case 'Block':
-        const blockedAction = this.state.currTurnActions.pop();
+        const blockedAction = this.state.actionStack.pop();
         break;
       case 'Challenge':
-        const challengedAction = this.state.currTurnActions.pop();
+        const challengedAction = this.state.actionStack.pop();
         break;
       case 'Coup':
         this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
-        this.state.currTurnActions.push({
+        this.state.actionStack.push({
           player: action.target,
           action: { type: 'Revealing Influence', blockable: false, challengable: false },
         });
@@ -197,7 +255,7 @@ export default class Coup {
       case 'Exchange':
         this.state.resolutionActions.push({ type: 'Draw', player });
         this.state.resolutionActions.push({ type: 'Draw', player });
-        this.state.currTurnActions.push({
+        this.state.actionStack.push({
           player,
           action: { type: 'Exchanging Influence', blockable: false, challengable: false },
         });
@@ -215,6 +273,11 @@ export default class Coup {
       case 'Tax':
         this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
         break;
+      case 'Resolving':
+        this.executeResolutionActions();
+        break;
+      case 'Declare Winner':
+        break;
       default:
         assert(false, 'Unhandled action type: ' + action.type);
     }
@@ -222,10 +285,10 @@ export default class Coup {
 
   getActions(): Array<AvailableActions> {
     return this.state.players.map((_, index) => {
-      if (this.state.currTurnActions.length === 0) {
+      if (this.state.actionStack.length === 0) {
         return this.getEmptyStackActions(index);
       }
-      const { player, action } = this.state.currTurnActions[this.state.currTurnActions.length - 1];
+      const { player, action } = this.state.actionStack[this.state.actionStack.length - 1];
       switch (action.type) {
         case 'Assassinate':
         case 'Coup':
@@ -243,6 +306,10 @@ export default class Coup {
           return this.getChallengeOnStackActions(index, { player, action });
         case 'Revealing Influence':
           return this.getRevealingInfluenceOnStackActions(index, { player, action });
+        case 'Resolving':
+          return { generalActions: [], characterActions: [], bluffActions: [] };
+        case 'Declare Winner':
+          return { generalActions: [], characterActions: [], bluffActions: [] };
         default:
           assert(false, 'Unexpected action type on top of stack');
       }
@@ -258,12 +325,24 @@ export default class Coup {
     // All players that aren't you are valid targets for actions.
     const targets = this.state.players.filter((p, _) => p.index !== playerIndex).map((p) => p.index);
 
+    if (this.state.players[playerIndex].coins > 9) {
+      // Player _has_ to play a coup.
+      const coupActions = targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i }));
+      return { generalActions: coupActions as Array<GeneralAction>, characterActions: [], bluffActions: [] };
+    }
+
     const generalActions = [
       { type: 'Income', blockable: false, challengable: false },
       { type: 'Foreign Aid', blockable: true, challengable: false },
       // Add one coup action for each player that is not youself.
       ...targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i })),
     ] as Array<GeneralAction>;
+
+    // Add coup actions if player has enough coins.
+    if (this.state.players[playerIndex].coins > 6) {
+      const coupActions = targets.map((i) => ({ type: 'Coup', blockable: false, challengable: false, target: i }));
+      generalActions.push(...(coupActions as Array<GeneralAction>));
+    }
 
     // characterActions for player
     const characterActions = flatten(
@@ -333,7 +412,7 @@ export default class Coup {
   }
 
   getChallengeOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
-    const challengedAction = this.state.currTurnActions[this.state.currTurnActions.length - 2];
+    const challengedAction = this.state.actionStack[this.state.actionStack.length - 2];
     if (challengedAction.player !== playerIndex) {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
@@ -458,6 +537,31 @@ export default class Coup {
   getCardsPlayerDoesNotHave(playerIndex: number): Array<Card> {
     const playersCards = this.state.hands[playerIndex].map((card) => card.card);
     return allCards.filter((card) => !playersCards.includes(card));
+  }
+
+  checkForWinner(): boolean {
+    const uneliminatedPlayers = this.state.players.filter((player) => !player.eliminated);
+    assert(uneliminatedPlayers.length != 0);
+    if (uneliminatedPlayers.length === 1) {
+      // We have a winner
+      this.state.actionStack.push({
+        player: uneliminatedPlayers[0].index,
+        action: { type: 'Declare Winner', blockable: false, challengable: false },
+      });
+      return true;
+    }
+    return false;
+  }
+
+  updateCurrTurn() {
+    for (var i = 1; i < this.state.players.length; i++) {
+      const j = (this.state.currTurn + i) % this.state.players.length;
+      if (!this.state.players[j].eliminated) {
+        this.state.currTurn = j;
+        return;
+      }
+    }
+    assert(false, `Couldn't find uneliminated player`);
   }
 }
 
