@@ -102,7 +102,7 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
               const className = clsx(classes.card, { [classes.selected]: allowSelection && selected.includes(i) });
               return (
                 <Box ml={1} mr={1} key={'cc' + i}>
-                  <img src="/card.jpg" className={className} alt="card" onClick={() => onClick(i)} />
+                  <img src="/card.png" className={className} alt="card" onClick={() => onClick(i)} />
                 </Box>
               );
             })}

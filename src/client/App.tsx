@@ -3,7 +3,15 @@ import React, { useContext, useState, useEffect } from 'react';
 import { CssBaseline, makeStyles, AppBar, Toolbar, IconButton, Box, Typography } from '@material-ui/core';
 import HomeIcon from '@material-ui/icons/Home';
 
-import { Views, StartScreen, InstructionsScreen, JoinGameScreen, LobbyScreen, PlayingScreen } from './views';
+import {
+  Views,
+  StartScreen,
+  InstructionsScreen,
+  JoinGameScreen,
+  LobbyScreen,
+  PlayingScreen,
+  HostScreen,
+} from './views';
 import { CurViewContext, SocketContext, PlayerContext } from './contexts';
 
 const useStyles = makeStyles((theme) => ({
@@ -66,7 +74,7 @@ export function App() {
         {curView === Views.JoinGame && <JoinGameScreen />}
         {curView === Views.Lobby && <LobbyScreen />}
         {curView === Views.PlayingScreen && !playerInfo.isHost && <PlayingScreen />}
-        {curView === Views.PlayingScreen && playerInfo.isHost && <LobbyScreen />}
+        {curView === Views.PlayingScreen && playerInfo.isHost && <HostScreen />}
       </main>
     </div>
   );

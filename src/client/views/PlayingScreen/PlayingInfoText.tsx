@@ -11,7 +11,6 @@ const useStyles = makeStyles((theme) => ({
 
 function lastActionToInfoText(state: State) {
   const { lastAction, me, isMyTurn, curTurnName } = getStateInfo(state);
-  const playerName = state.players[player].nickName;
   const nameOrYou = (targetIdx: number) => {
     const targetPlayer = state.players[targetIdx];
     return targetPlayer.id === me.id ? 'you' : targetPlayer.nickName;
@@ -22,6 +21,7 @@ function lastActionToInfoText(state: State) {
   }
 
   const { action, player } = lastAction;
+  const playerName = state.players[player].nickName;
 
   switch (action.type) {
     case 'Income':
@@ -43,17 +43,6 @@ function lastActionToInfoText(state: State) {
     case 'Block':
       return `${playerName} is blocking the action using a ${action.card}`;
   }
-}
-
-function blockOrChallengeText(action: Action) {
-  if (action.blockable && action.challengable) {
-    return 'Would you like to block or challenge?';
-  } else if (action.blockable) {
-    return 'Would you like to block?';
-  } else if (action.challengable) {
-    return 'Would you like to challenge?';
-  }
-  return '';
 }
 
 function renderActions(state: State, playerIdx: number) {
