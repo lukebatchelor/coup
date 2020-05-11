@@ -7,19 +7,6 @@ import { PlayingInfoText } from './PlayingInfoText';
 
 const useStyles = makeStyles((theme) => ({}));
 
-function noPlayerMoves(state: GameState) {
-  return state.actions.every((actions) => {
-    const { characterActions, bluffActions, generalActions, chooseActions } = actions;
-
-    return (
-      (!characterActions || characterActions.length === 0) &&
-      (!bluffActions || bluffActions.length === 0) &&
-      (!generalActions || generalActions.length === 0) &&
-      !chooseActions
-    );
-  });
-}
-
 type PlayingScreenProps = {};
 export function PlayingScreen(props: PlayingScreenProps) {
   const classes = useStyles();
@@ -34,11 +21,6 @@ export function PlayingScreen(props: PlayingScreenProps) {
     socket.on('game-state', ({ gameState }) => {
       console.log('game-state', gameState);
       setState(gameState);
-      if (noPlayerMoves) {
-        setTimeout(() => {
-          // socket.emit();
-        }, 3000);
-      }
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
   }, []);
@@ -46,7 +28,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
   const openHandDrawer = () => setHandOpen(true);
   const closeHandDrawer = () => setHandOpen(false);
   if (!state) {
-    return 'Loading';
+    return <div>Loading</div>;
   }
   const { me } = getStateInfo(state);
   const chooseAction = !!state.actions[me.index].chooseActions;

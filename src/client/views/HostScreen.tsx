@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box } from '@material-ui/core';
 import { State } from './PlayingScreen/types';
 import { SocketContext, PlayerContext } from '../contexts';
@@ -17,62 +17,40 @@ const useStyles = makeStyles((theme) => ({
     width: '100%',
   },
 }));
+function noPlayerMoves(state: GameState) {
+  return state.actions.every((actions) => {
+    const { characterActions, bluffActions, generalActions, chooseActions } = actions;
 
-const state: State = {
-  players: [
-    { index: 0, id: '69854f7b-9368-4748-b566-4b5a88c802c4', nickName: 'Luke', coins: 4 },
-    { index: 1, id: 'ca055a1c-240e-422f-a904-9c399f42aee0', nickName: 'Gary', coins: 9 },
-    { index: 2, id: 'ca055a1c-240e-422f-a904-9c399f42aee0', nickName: 'Red', coins: 2 },
-  ],
-  deck: [],
-  hands: [
-    [
-      { flipped: false, card: 'Ambassador' },
-      { flipped: false, card: 'Assassin' },
-    ],
-    [
-      { flipped: true, card: 'Captain' },
-      { flipped: false, card: 'Contessa' },
-    ],
-    [
-      { flipped: false, card: 'Captain' },
-      { flipped: false, card: 'Contessa' },
-    ],
-  ],
-  currTurn: 0,
-  // currTurnActions: [{ player: 0, action: { type: 'Tax', blockable: false, challengable: true } }],
-  currTurnActions: [],
-  phase: 'Action',
-  actions: [
-    {
-      generalActions: [
-        { type: 'Income', blockable: false, challengable: false },
-        { type: 'Foreign Aid', blockable: true, challengable: false },
-      ],
-      characterActions: [{ type: 'Exchange', blockable: false, challengable: true }],
-      bluffActions: [],
-    },
-    {
-      generalActions: [{ type: 'Income', blockable: false, challengable: false }],
-      characterActions: [],
-      bluffActions: [],
-    },
-  ],
-  resolutionActions: [],
-};
-
+    return (
+      (!characterActions || characterActions.length === 0) &&
+      (!bluffActions || bluffActions.length === 0) &&
+      (!generalActions || generalActions.length === 0) &&
+      !chooseActions
+    );
+  });
+}
 type HostScreenProps = {};
 export function HostScreen(props: HostScreenProps) {
   const classes = useStyles();
   const socket = useContext(SocketContext);
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
+  const [state, setState] = useState<GameState>(null);
 
   useEffect(() => {
-    socket.on('game-state', (data) => {
-      console.log(data);
+    socket.on('game-state', ({ gameState }) => {
+      console.log('game-state', { gameState });
+      setState(gameState);
+
+      if (noPlayerMoves(gameState)) {
+        setTimeout(() => {
+          socket.emit('resolve-action');
+        }, 3000);
+      }
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
   }, []);
+
+  if (!state) return <div>Loading...</div>;
 
   return (
     <Container maxWidth="lg">
@@ -81,9 +59,9 @@ export function HostScreen(props: HostScreenProps) {
           <Grid item xs={3}>
             <Paper className={classes.paper}>
               <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
-                <Avatar alt={player.nickName} src="/" />
+                <Avatar alt={player.nickname} src="/" />
                 <Box ml={1} />
-                <Typography>{player.nickName}</Typography>
+                <Typography>{player.nickname}</Typography>
                 <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
                   <img src="coin.png" className={classes.coin}></img>
                   <Typography>{player.coins}</Typography>

@@ -25,7 +25,7 @@ export function configureSockets(appServer: http.Server) {
 
   server.on('connection', (client: socketIo.Socket & { playerId: string }) => {
     function safeEmit<Event extends keyof SocketEvents>(event: Event, payload?: SocketEvents[Event]) {
-      safeEmit(event, payload);
+      client.emit(event, payload);
     }
     function safeOn<Event extends keyof SocketEvents>(event: Event, callback: (payload?: SocketEvents[Event]) => void) {
       client.on(event, callback);
@@ -151,10 +151,13 @@ export function configureSockets(appServer: http.Server) {
         coup.doAction(playerIndex, action);
         await setGameStateForRoom(user.roomCode, coup.dumpJson());
       }
+      const { actionStack, actions, players, resolutionActions, hands, currTurn }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands };
+
       server.to(user.roomCode).emit('game-state', {
         roomCode: user.roomCode,
         players: usersInRoom,
-        gameState: coup.dumpJson(),
+        gameState,
         hostId,
       });
     }
@@ -170,10 +173,13 @@ export function configureSockets(appServer: http.Server) {
       coup.resolve();
       await setGameStateForRoom(user.roomCode, coup.dumpJson());
 
+      const { actionStack, actions, players, resolutionActions, hands, currTurn }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands };
+
       server.to(user.roomCode).emit('game-state', {
         roomCode: user.roomCode,
         players: usersInRoom,
-        gameState: coup.dumpJson(),
+        gameState,
         hostId,
       });
     }
