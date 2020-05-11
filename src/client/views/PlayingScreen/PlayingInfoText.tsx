@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { makeStyles, Paper, Box, Typography, Button } from '@material-ui/core';
 
-import { State, getStateInfo, Action } from './types';
+import { getStateInfo } from './types';
+import { SocketContext } from '../../contexts';
 
 const useStyles = makeStyles((theme) => ({
   actionButton: {
@@ -9,11 +10,11 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function lastActionToInfoText(state: State) {
+function lastActionToInfoText(state: GameState) {
   const { lastAction, me, isMyTurn, curTurnName } = getStateInfo(state);
   const nameOrYou = (targetIdx: number) => {
     const targetPlayer = state.players[targetIdx];
-    return targetPlayer.id === me.id ? 'you' : targetPlayer.nickName;
+    return targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
   };
 
   if (!lastAction) {
@@ -21,7 +22,7 @@ function lastActionToInfoText(state: State) {
   }
 
   const { action, player } = lastAction;
-  const playerName = state.players[player].nickName;
+  const playerName = state.players[player].nickname;
 
   switch (action.type) {
     case 'Income':
@@ -45,7 +46,7 @@ function lastActionToInfoText(state: State) {
   }
 }
 
-function renderActions(state: State, playerIdx: number) {
+function renderActions(state: GameState, playerIdx: number) {
   const actions = state.actions[playerIdx];
   return (
     <>
@@ -57,12 +58,16 @@ function renderActions(state: State, playerIdx: number) {
 }
 
 function renderActionGroup(groupName: string, actions: Array<Action>) {
+  const socket = useContext(SocketContext);
+  const doAction = (action: Action) => {
+    socket.emit('player-action', { action });
+  };
   return (
     actions.length > 0 && (
       <Box mb={4}>
         <Typography variant="h6">{groupName}</Typography>
         {actions.map((action, idx) => (
-          <ActionButton action={action} text={action.type} key={`actions-${idx}`} onClick={(a) => console.log(a)} />
+          <ActionButton action={action} text={action.type} key={`actions-${idx}`} onClick={() => doAction(action)} />
         ))}
       </Box>
     )
@@ -93,7 +98,7 @@ function ActionButton(props: ActionButtonProps) {
 // Component that just displays the current instructions to the player
 // or more information about the last move
 type PlayingInfoTextProps = {
-  state: State;
+  state: GameState;
 };
 export function PlayingInfoText(props: PlayingInfoTextProps) {
   const classes = useStyles();
@@ -109,7 +114,7 @@ export function PlayingInfoText(props: PlayingInfoTextProps) {
           <Typography>{lastActionToInfoText(state)}</Typography>
         </Box>
       </Paper>
-      <Box mt={4}>{renderActions(state, me.index)}</Box>
+      <Box mt={4}>{renderActions(state, me ? me.index : 0)}</Box>
     </>
   );
 }

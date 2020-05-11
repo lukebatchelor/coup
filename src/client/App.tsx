@@ -3,15 +3,9 @@ import React, { useContext, useState, useEffect } from 'react';
 import { CssBaseline, makeStyles, AppBar, Toolbar, IconButton, Box, Typography } from '@material-ui/core';
 import HomeIcon from '@material-ui/icons/Home';
 
-import {
-  Views,
-  StartScreen,
-  InstructionsScreen,
-  JoinGameScreen,
-  LobbyScreen,
-  PlayingScreen,
-  HostScreen,
-} from './views';
+import { StartScreen, InstructionsScreen, JoinGameScreen, LobbyScreen, PlayingScreen, HostScreen } from './views';
+import { Views } from './views/Views';
+
 import { CurViewContext, SocketContext, PlayerContext } from './contexts';
 
 const useStyles = makeStyles((theme) => ({

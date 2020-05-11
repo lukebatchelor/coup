@@ -1,6 +1,7 @@
 // declare var io: any;
 
 declare type User = { id: string; nickName: string; roomCode: string; host: boolean };
+declare type GameState = Omit<State, 'deck'>;
 
 declare type HandshakeMessage = { id: string };
 declare type DisconnectMessage = {};
@@ -12,6 +13,7 @@ declare type PlayerLoadedGameMessage = { roomCode: string };
 declare type RoomCreatedMessage = { roomCode: string };
 declare type RoomStatusMessage = { roomCode: string; players: Array<User> };
 declare type PlayerActionMessage = { action: Action };
+declare type GameStateMessage = { roomCode: string; players: Array<User>; gameState: GameState; hostId: string };
 
 declare type SocketEvents = {
   handshake: HandshakeMessage;
@@ -25,5 +27,6 @@ declare type SocketEvents = {
   'player-loaded-game': PlayerLoadedGameMessage;
   'room-status': RoomStatusMessage;
   'start-game': never;
+  'game-state': GameStateMessage;
   'player-action': PlayerActionMessage;
 };

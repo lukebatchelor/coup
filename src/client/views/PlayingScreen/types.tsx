@@ -82,11 +82,11 @@ export type AvailableActions = {
   };
 };
 
-export function getStateInfo(state: State) {
+export function getStateInfo(state: GameState) {
   const id = localStorage.getItem('id');
   const isMyTurn = state.players[state.currTurn].id === id;
-  const curTurnName = state.players[state.currTurn].nickName;
-  const lastAction = state.currTurnActions.length ? state.currTurnActions[state.currTurnActions.length - 1] : null;
+  const curTurnName = state.players[state.currTurn].nickname;
+  const lastAction = state.actionStack.length ? state.actionStack[state.actionStack.length - 1] : null;
   const me = state.players.find((p) => p.id === id);
 
   return {

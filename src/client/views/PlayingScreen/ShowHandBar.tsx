@@ -58,12 +58,12 @@ type ShowHandDrawerProps = {
   closeHandDrawer: () => void;
   allowSelection: number;
   onSelection: (selected: Array<number>) => void;
+  cards: Array<CardInHand>;
 };
 export function ShowHandDrawer(props: ShowHandDrawerProps) {
   const classes = useStyles();
-  const { open, closeHandDrawer, onSelection, allowSelection } = props;
+  const { open, closeHandDrawer, onSelection, allowSelection, cards } = props;
   const [selected, setSelected] = useState<Array<number>>([]);
-  const startups: any = [1, 2, 3, 4];
 
   const onClick = (idx: number) => {
     if (allowSelection > 1) {
@@ -98,7 +98,7 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
             Hand
           </Typography>
           <GridList cols={3} style={{ flexWrap: 'nowrap', transform: 'translateZ(0)' }}>
-            {startups.map((card: any, i: number) => {
+            {cards.map((card, i: number) => {
               const className = clsx(classes.card, { [classes.selected]: allowSelection && selected.includes(i) });
               return (
                 <Box ml={1} mr={1} key={'cc' + i}>

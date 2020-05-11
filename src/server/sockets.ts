@@ -112,6 +112,7 @@ export function configureSockets(appServer: http.Server) {
     async function allPlayersReady({ roomCode }: AllPlayersReadyMessage) {
       const usersInRoom = (await getUsersInRoom(roomCode)).filter((p) => p.host == false);
       const players = usersInRoom.map((p) => ({ id: p.id, nickname: p.nickName }));
+      console.log('Starting new game', { usersInRoom, players });
       const coup = new Coup(shuffle(players));
       await startGameForRoom(roomCode, coup.dumpJson());
       console.log(`Starting game in room ${roomCode}`);
@@ -125,7 +126,12 @@ export function configureSockets(appServer: http.Server) {
       const room = await getRoom(user.roomCode);
       // Only send once to each client
       console.log('Sending game-state to' + JSON.stringify({ user, roomCode: user.roomCode }));
-      safeEmit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState: room.gameState, hostId });
+      const coup = new Coup([]);
+      coup.loadJson(room.gameState);
+
+      const { actionStack, actions, players, resolutionActions, hands, currTurn }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands };
+      safeEmit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState, hostId });
     }
 
     async function playerAction({ action }: PlayerActionMessage) {

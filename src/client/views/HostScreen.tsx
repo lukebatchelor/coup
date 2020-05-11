@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box } from '@material-ui/core';
 import { State } from './PlayingScreen/types';
+import { SocketContext, PlayerContext } from '../contexts';
 
 const useStyles = makeStyles((theme) => ({
   paper: { padding: theme.spacing(2) },
@@ -63,6 +64,15 @@ const state: State = {
 type HostScreenProps = {};
 export function HostScreen(props: HostScreenProps) {
   const classes = useStyles();
+  const socket = useContext(SocketContext);
+  const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
+
+  useEffect(() => {
+    socket.on('game-state', (data) => {
+      console.log(data);
+    });
+    socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
+  }, []);
 
   return (
     <Container maxWidth="lg">

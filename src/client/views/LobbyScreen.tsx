@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Typography, Box, Paper, Grid, Avatar, Button } from '@material-ui/core';
-import { SocketContext, PlayerContext } from '../contexts';
+import { SocketContext, PlayerContext, CurViewContext } from '../contexts';
+import { Views } from './Views';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -13,10 +14,13 @@ type LobbyScreenProps = {};
 export function LobbyScreen(props: LobbyScreenProps) {
   const classes = useStyles();
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
+  const [curView, setCurView] = useContext(CurViewContext);
+
   const socket = useContext(SocketContext);
   const [players, setPlayers] = useState<Array<User>>([]);
 
   const { roomCode, nickName, isHost } = playerInfo;
+  console.log('lobby render');
 
   // Will only be called on first render
   useEffect(() => {
@@ -27,7 +31,9 @@ export function LobbyScreen(props: LobbyScreenProps) {
       setPlayers(players.filter((p) => !p.host));
     });
     socket.on('start-game', () => {
+      console.log('start-game');
       setPlayerInfo({ inGame: true });
+      setCurView(Views.PlayingScreen);
     });
 
     // make sure we clean up listeners to avoid memory leaks
