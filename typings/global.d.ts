@@ -28,5 +28,6 @@ declare type SocketEvents = {
   'room-status': RoomStatusMessage;
   'start-game': never;
   'game-state': GameStateMessage;
+  'resolve-action': never;
   'player-action': PlayerActionMessage;
 };
