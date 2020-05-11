@@ -4,46 +4,8 @@ import { PlayerContext, SocketContext } from '../../contexts';
 import { ShowHandBar, ShowHandDrawer } from './ShowHandBar';
 import { Phase, State, getStateInfo } from './types';
 import { PlayingInfoText } from './PlayingInfoText';
-import { stat } from 'fs';
-const useStyles = makeStyles((theme) => ({}));
 
-const state: State = {
-  players: [
-    { index: 0, id: '74e012fb-3c23-422d-a07d-7db7e75071df', nickName: 'Luke', coins: 4 },
-    { index: 1, id: 'd6f0aaae-9c72-44b6-a63e-190c7dbe8939', nickName: 'Gary', coins: 4 },
-  ],
-  deck: [],
-  hands: [
-    [
-      { flipped: false, card: 'Ambassador' },
-      { flipped: false, card: 'Assassin' },
-    ],
-    [
-      { flipped: false, card: 'Captain' },
-      { flipped: false, card: 'Contessa' },
-    ],
-  ],
-  currTurn: 0,
-  // currTurnActions: [{ player: 0, action: { type: 'Tax', blockable: false, challengable: true } }],
-  currTurnActions: [],
-  phase: 'Action',
-  actions: [
-    {
-      generalActions: [
-        { type: 'Income', blockable: false, challengable: false },
-        { type: 'Foreign Aid', blockable: true, challengable: false },
-      ],
-      characterActions: [{ type: 'Exchange', blockable: false, challengable: true }],
-      bluffActions: [],
-    },
-    {
-      generalActions: [{ type: 'Income', blockable: false, challengable: false }],
-      characterActions: [],
-      bluffActions: [],
-    },
-  ],
-  resolutionActions: [],
-};
+const useStyles = makeStyles((theme) => ({}));
 
 function noPlayerMoves(state: GameState) {
   return state.actions.every((actions) => {
@@ -74,7 +36,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
       setState(gameState);
       if (noPlayerMoves) {
         setTimeout(() => {
-          socket.emit();
+          // socket.emit();
         }, 3000);
       }
     });
@@ -86,8 +48,8 @@ export function PlayingScreen(props: PlayingScreenProps) {
   if (!state) {
     return 'Loading';
   }
-  const { lastAction, me } = getStateInfo(state);
-  const chooseAction = lastAction ? lastAction.action.type === 'Choose' : null;
+  const { me } = getStateInfo(state);
+  const chooseAction = !!state.actions[me.index].chooseActions;
 
   return (
     <Container maxWidth="md">
