@@ -161,7 +161,7 @@ export function configureSockets(appServer: http.Server) {
       const { actionStack, actions, players, resolutionActions, hands, currTurn }: GameState = coup.state;
       const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands };
 
-      server.to(user.roomCode).emit('game-state', {
+      safeRoomEmit(user.roomCode, 'game-state', {
         roomCode: user.roomCode,
         players: usersInRoom,
         gameState,
@@ -183,7 +183,7 @@ export function configureSockets(appServer: http.Server) {
       const { actionStack, actions, players, resolutionActions, hands, currTurn }: GameState = coup.state;
       const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands };
 
-      server.to(user.roomCode).emit('game-state', {
+      safeRoomEmit(user.roomCode, 'game-state', {
         roomCode: user.roomCode,
         players: usersInRoom,
         gameState,
