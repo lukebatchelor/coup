@@ -25,7 +25,7 @@ export function configureSockets(appServer: http.Server) {
 
   server.on('connection', (client: socketIo.Socket & { playerId: string }) => {
     function safeEmit<Event extends keyof SocketEvents>(event: Event, payload?: SocketEvents[Event]) {
-      client.emit(event, payload);
+      safeEmit(event, payload);
     }
     function safeOn<Event extends keyof SocketEvents>(event: Event, callback: (payload?: SocketEvents[Event]) => void) {
       client.on(event, callback);
@@ -39,6 +39,7 @@ export function configureSockets(appServer: http.Server) {
     safeOn('all-players-ready', allPlayersReady);
     safeOn('player-loaded-game', playerLoadedGame);
     safeOn('player-action', playerAction);
+    safeOn('resolve-action', resolveAction);
     // safeOn('next-game-over-step', nextGameOverStep);
     // safeOn('restart-game', restartGame);
     // safeOn('request-game-state', requestGameState);
@@ -61,7 +62,7 @@ export function configureSockets(appServer: http.Server) {
         }
       }
       client.playerId = id;
-      client.emit('welcome', {
+      safeEmit('welcome', {
         id,
         nickName: exists ? exists.nickName : '',
         roomCode: exists ? exists.roomCode : '',
@@ -78,10 +79,10 @@ export function configureSockets(appServer: http.Server) {
     }
 
     async function createNewRoom() {
-      const roomCode = randomstring.generate({ length: 5, charset: 'alphabetic' }).toUpperCase();
+      const roomCode = randomstring.generate({ length: 4, charset: 'alphabetic' }).toUpperCase();
       await createRoom(roomCode);
       console.log(`Created a new room ${roomCode}`);
-      client.emit('room-created', { roomCode });
+      safeEmit('room-created', { roomCode });
     }
 
     async function playerJoinsRoom({ roomCode, nickName, host }: PlayerJoinRoomMessage) {
@@ -109,7 +110,7 @@ export function configureSockets(appServer: http.Server) {
     }
 
     async function allPlayersReady({ roomCode }: AllPlayersReadyMessage) {
-      const usersInRoom = (await getUsersInRoom(roomCode)).filter((p) => p.host === false);
+      const usersInRoom = (await getUsersInRoom(roomCode)).filter((p) => p.host == false);
       const players = usersInRoom.map((p) => ({ id: p.id, nickname: p.nickName }));
       const coup = new Coup(shuffle(players));
       await startGameForRoom(roomCode, coup.dumpJson());
@@ -124,7 +125,7 @@ export function configureSockets(appServer: http.Server) {
       const room = await getRoom(user.roomCode);
       // Only send once to each client
       console.log('Sending game-state to' + JSON.stringify({ user, roomCode: user.roomCode }));
-      client.emit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState: room.gameState, hostId });
+      safeEmit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState: room.gameState, hostId });
     }
 
     async function playerAction({ action }: PlayerActionMessage) {
@@ -144,6 +145,25 @@ export function configureSockets(appServer: http.Server) {
         coup.doAction(playerIndex, action);
         await setGameStateForRoom(user.roomCode, coup.dumpJson());
       }
+      server.to(user.roomCode).emit('game-state', {
+        roomCode: user.roomCode,
+        players: usersInRoom,
+        gameState: coup.dumpJson(),
+        hostId,
+      });
+    }
+
+    async function resolveAction() {
+      console.log(`${client.playerId} trying to resolve action on top of stack`);
+      const user = await getUser(client.playerId);
+      const usersInRoom = await getUsersInRoom(user.roomCode);
+      const hostId = usersInRoom.filter((p) => p.host)[0].id;
+      const room = await getRoom(user.roomCode);
+      const coup = new Coup([]);
+      coup.loadJson(room.gameState);
+      coup.resolve();
+      await setGameStateForRoom(user.roomCode, coup.dumpJson());
+
       server.to(user.roomCode).emit('game-state', {
         roomCode: user.roomCode,
         players: usersInRoom,
