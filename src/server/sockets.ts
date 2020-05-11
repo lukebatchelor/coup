@@ -2,6 +2,9 @@ import socketIo from 'socket.io';
 import { v4 as uuid } from 'uuid';
 import randomstring from 'randomstring';
 import http from 'http';
+import Coup from './coup';
+import isEqual from 'lodash.isequal';
+import { assert } from 'console';
 
 import {
   addUser,
@@ -21,17 +24,24 @@ export function configureSockets(appServer: http.Server) {
   const server = socketIo(appServer);
 
   server.on('connection', (client: socketIo.Socket & { playerId: string }) => {
-    client.on('handshake', handshake);
-    client.on('disconnect', disconnect);
-    client.on('create-room', createNewRoom);
-    client.on('player-join-room', playerJoinsRoom);
-    client.on('player-leave-room', playerLeavesRoom);
-    client.on('all-players-ready', allPlayersReady);
-    // client.on('player-loaded-game', playerLoadedGame);
-    // client.on('player-move', playerMove);
-    // client.on('next-game-over-step', nextGameOverStep);
-    // client.on('restart-game', restartGame);
-    // client.on('request-game-state', requestGameState);
+    function safeEmit<Event extends keyof SocketEvents>(event: Event, payload?: SocketEvents[Event]) {
+      client.emit(event, payload);
+    }
+    function safeOn<Event extends keyof SocketEvents>(event: Event, callback: (payload?: SocketEvents[Event]) => void) {
+      client.on(event, callback);
+    }
+
+    safeOn('handshake', handshake);
+    safeOn('disconnect', disconnect);
+    safeOn('create-room', createNewRoom);
+    safeOn('player-join-room', playerJoinsRoom);
+    safeOn('player-leave-room', playerLeavesRoom);
+    safeOn('all-players-ready', allPlayersReady);
+    safeOn('player-loaded-game', playerLoadedGame);
+    safeOn('player-action', playerAction);
+    // safeOn('next-game-over-step', nextGameOverStep);
+    // safeOn('restart-game', restartGame);
+    // safeOn('request-game-state', requestGameState);
 
     async function handshake({ id }: HandshakeMessage) {
       let exists: UserRecord = null;
@@ -100,23 +110,59 @@ export function configureSockets(appServer: http.Server) {
 
     async function allPlayersReady({ roomCode }: AllPlayersReadyMessage) {
       const usersInRoom = (await getUsersInRoom(roomCode)).filter((p) => p.host === false);
-      // const startups = new Startups({ players: shuffle(usersInRoom) });
-      await startGameForRoom(roomCode, 'state');
+      const players = usersInRoom.map((p) => ({ id: p.id, nickname: p.nickName }));
+      const coup = new Coup(shuffle(players));
+      await startGameForRoom(roomCode, coup.dumpJson());
       console.log(`Starting game in room ${roomCode}`);
       server.to(roomCode).emit('start-game');
     }
 
-    function shuffle(array: Array<any>) {
-      let counter = array.length;
-      while (counter > 0) {
-        let index = Math.floor(Math.random() * counter);
-        counter--;
-        let temp = array[counter];
-        array[counter] = array[index];
-        array[index] = temp;
-      }
+    async function playerLoadedGame() {
+      const user = await getUser(client.playerId);
+      const usersInRoom = await getUsersInRoom(user.roomCode);
+      const hostId = usersInRoom.filter((p) => p.host)[0].id;
+      const room = await getRoom(user.roomCode);
+      // Only send once to each client
+      console.log('Sending game-state to' + JSON.stringify({ user, roomCode: user.roomCode }));
+      client.emit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState: room.gameState, hostId });
+    }
 
-      return array;
+    async function playerAction({ action }: PlayerActionMessage) {
+      console.log(`${client.playerId} trying to do action ${JSON.stringify(action)}`);
+      const user = await getUser(client.playerId);
+      const usersInRoom = await getUsersInRoom(user.roomCode);
+      const hostId = usersInRoom.filter((p) => p.host)[0].id;
+      const room = await getRoom(user.roomCode);
+      const coup = new Coup([]);
+      coup.loadJson(room.gameState);
+      const playerIndex = coup.state.players.findIndex((p) => p.id === client.playerId);
+      assert(playerIndex > -1);
+      const validAction = coup.isActionLegal(playerIndex, action);
+      console.log('Valid action ', validAction);
+      console.log('Valid actions ', coup.state.actions);
+      if (validAction) {
+        coup.doAction(playerIndex, action);
+        await setGameStateForRoom(user.roomCode, coup.dumpJson());
+      }
+      server.to(user.roomCode).emit('game-state', {
+        roomCode: user.roomCode,
+        players: usersInRoom,
+        gameState: coup.dumpJson(),
+        hostId,
+      });
     }
   });
+}
+
+function shuffle<T>(array: Array<T>): Array<T> {
+  let counter = array.length;
+  while (counter > 0) {
+    let index = Math.floor(Math.random() * counter);
+    counter--;
+    let temp = array[counter];
+    array[counter] = array[index];
+    array[index] = temp;
+  }
+
+  return array;
 }

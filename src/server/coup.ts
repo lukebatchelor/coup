@@ -1,75 +1,9 @@
 import isEqual from 'lodash.isequal';
 
-type Player = { index: number; coins: number; nickname: string; id: string; eliminated: boolean };
-
-type State = {
-  players: Array<Player>;
-  deck: Array<Card>;
-  hands: Array<[CardInHand, CardInHand]>;
-  currTurn: number;
-  actionStack: Array<PlayerAction>;
-  resolutionActions: Array<ResolutionAction>;
-  actions: Array<AvailableActions>;
-};
-
-// Cards
-type Card = 'Captain' | 'Contessa' | 'Duke' | 'Assassin' | 'Ambassador';
-type CardInHand = { card: Card; flipped: boolean };
 const allCards: Array<Card> = ['Captain', 'Contessa', 'Duke', 'Assassin', 'Ambassador'];
 const fullDeck = allCards.reduce(function (result, curr) {
   return result.concat([curr, curr, curr]);
 }, []);
-
-// Actions
-
-type Flip = { type: 'Flip'; player: number; card: Card };
-type ResolutionAction =
-  | { type: 'Gain Coins'; gainingPlayer: number; coins: number }
-  | { type: 'Lose Coins'; losingPlayer: number; coins: number }
-  | Flip
-  | { type: 'Draw'; player: number }
-  | { type: 'Discard'; player: number; card: Card };
-
-// General Actions
-type IncomeAction = { type: 'Income' };
-type ForeinAidAction = { type: 'Foreign Aid' };
-type CoupAction = { type: 'Coup'; target: number };
-type ChallengeAction = { type: 'Challenge' };
-type RevealAction = { type: 'Reveal'; card: Card };
-
-// Character/Bluff Actions
-type TaxAction = { type: 'Tax' };
-type AssassinateAction = { type: 'Assassinate'; target: number };
-type ExchangeAction = { type: 'Exchange' };
-type StealAction = { type: 'Steal'; target: number };
-type BlockAction = { type: 'Block'; card: Card };
-
-// Other actions that can be on the stack but are not put there by players.
-type RevealingInfluence = { type: 'Revealing Influence' };
-type Exchanging = { type: 'Exchanging Influence' };
-type Resolving = { type: 'Resolving' };
-type DeclareWinner = { type: 'Declare Winner' };
-type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner;
-
-// ChooseAction - used after assassinate/coup/challenge/exchange
-type ChooseAction = { type: 'Choose'; cards: Array<Card> };
-
-type GeneralAction = IncomeAction | ForeinAidAction | CoupAction | ChallengeAction | RevealAction;
-type CharacterAction = TaxAction | AssassinateAction | ExchangeAction | StealAction | BlockAction;
-
-type Action = GeneralAction | CharacterAction | ChooseAction | OtherAction;
-
-type PlayerAction = { player: number; action: Action };
-
-type AvailableActions = {
-  generalActions: Array<GeneralAction>;
-  characterActions: Array<CharacterAction>;
-  bluffActions: Array<CharacterAction>;
-  chooseActions?: {
-    cards: Array<Card>;
-    actions: Array<ChooseAction>;
-  };
-};
 
 export default class Coup {
   state: State;
