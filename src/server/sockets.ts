@@ -30,6 +30,13 @@ export function configureSockets(appServer: http.Server) {
     function safeOn<Event extends keyof SocketEvents>(event: Event, callback: (payload?: SocketEvents[Event]) => void) {
       client.on(event, callback);
     }
+    function safeRoomEmit<Event extends keyof SocketEvents>(
+      roomCode: string,
+      event: Event,
+      payload?: SocketEvents[Event]
+    ) {
+      server.to(roomCode).emit(event, payload);
+    }
 
     safeOn('handshake', handshake);
     safeOn('disconnect', disconnect);
