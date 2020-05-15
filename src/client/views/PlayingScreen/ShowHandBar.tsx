@@ -25,6 +25,7 @@ const useStyles = makeStyles((theme) => ({
   card: {
     maxHeight: '140px',
     width: 'auto',
+    // alignSelf: 'center',
   },
   selected: {
     filter: 'grayscale(80%)',
@@ -97,12 +98,13 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
           <Typography variant="h5" align="center" gutterBottom>
             Hand
           </Typography>
-          <GridList cols={3} style={{ flexWrap: 'nowrap', transform: 'translateZ(0)' }}>
+          <GridList cols={2} style={{ flexWrap: 'nowrap', transform: 'translateZ(0)' }}>
             {cards.map((card, i: number) => {
               const className = clsx(classes.card, { [classes.selected]: allowSelection && selected.includes(i) });
               return (
-                <Box ml={1} mr={1} key={'cc' + i}>
+                <Box ml={1} mr={1} display="flex" alignItems="center" flexDirection="column" key={'cc' + i}>
                   <img src="/card.png" className={className} alt="card" onClick={() => onClick(i)} />
+                  <Typography align="center">{card.card}</Typography>
                 </Box>
               );
             })}

@@ -3,7 +3,7 @@ import { makeStyles, Container, AppBar, Box, Toolbar, ButtonGroup, Button, Typog
 import { PlayerContext, SocketContext } from '../../contexts';
 import { ShowHandBar, ShowHandDrawer } from './ShowHandBar';
 import { Phase, State, getStateInfo } from './types';
-import { PlayingInfoText } from './PlayingInfoText';
+import { Actions } from './Actions';
 
 const useStyles = makeStyles((theme) => ({}));
 
@@ -12,8 +12,6 @@ export function PlayingScreen(props: PlayingScreenProps) {
   const classes = useStyles();
   const [playerInfo] = useContext(PlayerContext);
   const socket = useContext(SocketContext);
-  const phase: Phase = 'Action';
-  const curTurn = 0;
   const [handOpen, setHandOpen] = useState<boolean>(false);
   const [state, setState] = useState<GameState>(null);
 
@@ -35,10 +33,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
 
   return (
     <Container maxWidth="md">
-      <Typography variant="h4">
-        Playing ({phase},{curTurn})
-      </Typography>
-      <PlayingInfoText state={state} />
+      <Actions state={state} />
       <ShowHandBar openHandDrawer={openHandDrawer} />
       <ShowHandDrawer
         open={handOpen || chooseAction}
