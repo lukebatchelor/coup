@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box } from '@material-ui/core';
+import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box, Button } from '@material-ui/core';
 import { State } from './PlayingScreen/types';
 import { SocketContext, PlayerContext } from '../contexts';
 
@@ -36,15 +36,17 @@ export function HostScreen(props: HostScreenProps) {
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
   const [state, setState] = useState<GameState>(null);
 
+  function resolveAction() {
+    socket.emit('resolve-action');
+  }
+
   useEffect(() => {
     socket.on('game-state', ({ gameState }) => {
       console.log('game-state', { gameState });
       setState(gameState);
 
       if (noPlayerMoves(gameState)) {
-        setTimeout(() => {
-          socket.emit('resolve-action');
-        }, 3000);
+        setTimeout(() => resolveAction, 3000);
       }
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
@@ -81,6 +83,15 @@ export function HostScreen(props: HostScreenProps) {
           </Grid>
         ))}
       </Grid>
+      <Button
+        type="button"
+        variant="contained"
+        color="primary"
+        disabled={state.actionStack.length === 0}
+        onClick={resolveAction}
+      >
+        [DEBUG] Resolve Action
+      </Button>
     </Container>
   );
 }
