@@ -10,6 +10,7 @@ declare type State = {
   hands: Array<[CardInHand, CardInHand]>;
   currTurn: number;
   actionStack: Array<PlayerAction>;
+  actionList: Array<PlayerAction>;
   resolutionActions: Array<ResolutionAction>;
   actions: Array<AvailableActions>;
 };
@@ -22,7 +23,8 @@ declare type ResolutionAction =
   | { type: 'Lose Coins'; losingPlayer: number; coins: number }
   | Flip
   | { type: 'Draw'; player: number }
-  | { type: 'Discard'; player: number; card: Card };
+  | { type: 'Discard'; player: number; card: Card }
+  | { type: 'Game Over'; winner: number };
 
 // General Actions
 declare type IncomeAction = { type: 'Income' };
@@ -33,7 +35,7 @@ declare type RevealAction = { type: 'Reveal'; card: Card };
 
 // Character/Bluff Actions
 declare type TaxAction = { type: 'Tax' };
-declare type AssassinateAction = { type: 'Assassinate'; target: number };
+declare type AssassinateAction = { type: 'Assassinate'; target: number; disabled: boolean };
 declare type ExchangeAction = { type: 'Exchange' };
 declare type StealAction = { type: 'Steal'; target: number };
 declare type BlockAction = { type: 'Block'; card: Card };

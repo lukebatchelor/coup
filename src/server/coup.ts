@@ -31,6 +31,7 @@ export default class Coup {
       hands,
       currTurn: 0,
       actionStack: [],
+      actionList: [],
       resolutionActions: [],
       actions: [],
     };
@@ -54,6 +55,7 @@ export default class Coup {
       console.log('Invalid action');
       return;
     }
+    this.state.actionList.push({ player, action });
     if (action.type !== 'Choose') {
       this.state.actionStack.push({ player, action } as PlayerAction);
     } else {
@@ -161,9 +163,20 @@ export default class Coup {
       }
     }
     this.state.resolutionActions = [];
-    const gameOver = this.checkForWinner();
-    if (!gameOver) {
+    this.state.actionList = [];
+    const winner = this.checkForWinner();
+    if (winner !== null) {
       this.updateCurrTurn();
+    } else {
+      // We have a winner
+      this.state.actionStack.push({
+        player: winner,
+        action: { type: 'Declare Winner' },
+      });
+      this.state.resolutionActions.push({
+        type: 'Game Over',
+        winner,
+      });
     }
   }
 
@@ -178,6 +191,7 @@ export default class Coup {
   resolveAction({ player, action }: PlayerAction) {
     switch (action.type) {
       case 'Assassinate':
+        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 3 });
         this.state.actionStack.push({
           player: action.target,
           action: { type: 'Revealing Influence' },
@@ -222,8 +236,8 @@ export default class Coup {
         break;
       case 'Steal':
         const coins = Math.min(2, this.state.players[action.target].coins);
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
         this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: action.target, coins: 2 });
+        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
         break;
       case 'Tax':
         this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
@@ -240,9 +254,13 @@ export default class Coup {
 
   getActions(): Array<AvailableActions> {
     return this.state.players.map((_, index) => {
+      if (this.state.players[index].eliminated) {
+        return { generalActions: [], characterActions: [], bluffActions: [] };
+      }
       if (this.state.actionStack.length === 0) {
         return this.getEmptyStackActions(index);
       }
+      // Get action on top of stack
       const { player, action } = this.state.actionStack[this.state.actionStack.length - 1];
       switch (action.type) {
         case 'Assassinate':
@@ -298,12 +316,12 @@ export default class Coup {
     const characterActions = flatten(
       this.state.hands[playerIndex]
         .filter((card) => !card.flipped)
-        .map((card) => this.getActionForCharacter(card.card, targets))
-    );
+        .map((card) => this.getActionForCharacter(playerIndex, card.card, targets))
+    ).filter((action, index, array) => array.findIndex((a) => a.type === action.type) === index);
 
     // bluffActions for player
     const bluffActions = flatten(
-      this.getCardsPlayerDoesNotHave(playerIndex).map((card) => this.getActionForCharacter(card, targets))
+      this.getCardsPlayerDoesNotHave(playerIndex).map((card) => this.getActionForCharacter(playerIndex, card, targets))
     );
 
     return { generalActions, characterActions, bluffActions };
@@ -445,20 +463,20 @@ export default class Coup {
     return this.state.deck.shift();
   }
 
-  getActionForCharacter(character: Card, targets: Array<number>): Array<CharacterAction> {
+  getActionForCharacter(playerIndex: number, character: Card, targets: Array<number>): Array<CharacterAction> {
     switch (character) {
       case 'Captain':
-        return targets.map((i) => ({ type: 'Steal', blockable: true, challengable: true, target: i }));
+        return targets.map((i) => ({ type: 'Steal', target: i }));
       case 'Duke':
         return [{ type: 'Tax' }];
       case 'Ambassador':
         return [{ type: 'Exchange' }];
       case 'Assassin':
+        const disabled = this.state.players[playerIndex].coins < 3;
         return targets.map((i) => ({
           type: 'Assassinate',
-          blockable: true,
-          challengable: true,
           target: i,
+          disabled,
         }));
       case 'Contessa':
       default:
@@ -544,6 +562,9 @@ export default class Coup {
   }
 
   isActionLegal(player: number, action: Action): boolean {
+    if (action.type === 'Assassinate' && action.disabled) {
+      return false;
+    }
     const allAvailableActions = [] as Array<Action>;
     const availableActions = this.state.actions[player];
     allAvailableActions.push(...availableActions.generalActions);
@@ -559,18 +580,13 @@ export default class Coup {
     return valid;
   }
 
-  checkForWinner(): boolean {
+  checkForWinner(): number | null {
     const uneliminatedPlayers = this.state.players.filter((player) => !player.eliminated);
     assert(uneliminatedPlayers.length != 0);
     if (uneliminatedPlayers.length === 1) {
-      // We have a winner
-      this.state.actionStack.push({
-        player: uneliminatedPlayers[0].index,
-        action: { type: 'Declare Winner' },
-      });
-      return true;
+      return uneliminatedPlayers[0].index;
     }
-    return false;
+    return null;
   }
 
   updateCurrTurn() {
@@ -602,7 +618,7 @@ function flatten<T>(array: Array<Array<T>>): Array<T> {
   return array.reduce((res, curr) => res.concat(...curr), []);
 }
 
-function dedupe<T>(array: Array<[T, T]>): Array<[T, T]> {
+function dedupePairsArray<T>(array: Array<[T, T]>): Array<[T, T]> {
   return array.filter(
     ([e1, e2], index, self) =>
       index === self.findIndex(([e3, e4]) => (e1 === e3 && e2 === e4) || (e1 === e4 && e2 === e3))
@@ -613,7 +629,7 @@ function dedupe<T>(array: Array<[T, T]>): Array<[T, T]> {
 function uniqueCombinations<T>(array: Array<T>): Array<[T, T]> {
   const temp = [...array];
   const combinations = temp.reduce((acc, v, i) => acc.concat(temp.slice(i + 1).map((w) => [v, w])), []);
-  return dedupe(combinations);
+  return dedupePairsArray(combinations);
 }
 
 function assert(condition: boolean, message?: string): asserts condition {
