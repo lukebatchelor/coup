@@ -165,7 +165,7 @@ export default class Coup {
     this.state.resolutionActions = [];
     this.state.actionList = [];
     const winner = this.checkForWinner();
-    if (winner !== null) {
+    if (winner === null) {
       this.updateCurrTurn();
     } else {
       // We have a winner
