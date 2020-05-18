@@ -92,6 +92,7 @@ function ActionGroup(props: ActionGroupProps) {
             color="primary"
             className={classes.actionButton}
             onClick={() => onActionSelected(action)}
+            disabled={action.type === 'Assassinate' && action.disabled}
           >
             {actionToString(action, state)}
           </Button>

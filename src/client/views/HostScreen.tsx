@@ -51,6 +51,8 @@ function getLastActionText(playerAction: PlayerAction, state: GameState) {
       return `${playerName} is blocking the action using a ${action.card}`;
     case 'Exchanging Influence':
       return `${playerName} is exchanging cards with the deck`;
+    case 'Choose':
+      return `${playerName} revealed a ${action.cards[0]}`;
     case 'Revealing Influence':
       return `${playerName} must reveal a card!`;
     case 'Resolving':
@@ -72,7 +74,12 @@ function getResolvedState(state: GameState, resolutionCount: number) {
     if (action.type === 'Flip') {
       resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
     } else if (action.type === 'Discard') {
+      resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
     } else if (action.type === 'Draw') {
+      const prevAction = resolutionActions[i - 1];
+      if (prevAction.type === 'Discard') {
+        resolvedState.hands[prevAction.player].find((card) => card.card === prevAction.card).flipped = false;
+      }
     } else if (action.type === 'Gain Coins') {
       resolvedState.players[action.gainingPlayer].coins += action.coins;
     } else if (action.type === 'Lose Coins') {
@@ -119,6 +126,9 @@ export function HostScreen(props: HostScreenProps) {
       if (noPlayerMoves(gameState)) {
         setTimeout(() => resolveAction, 3000);
       }
+      if (gameState.actionStack.length === 0) {
+        setResolutionCount(0);
+      }
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
   }, []);
@@ -129,12 +139,12 @@ export function HostScreen(props: HostScreenProps) {
   const debugResolveText = `Resolution action: ${resolutionCount}/${state.resolutionActions.length}`;
   return (
     <Container maxWidth="lg">
-      {state.actionStack.length === 0 && (
+      {state.actionList.length === 0 && (
         <Typography variant="h5" gutterBottom align="center">
           {`${getStateInfo(state).curTurnName}'s turn`}
         </Typography>
       )}
-      {state.actionStack.map((action) => (
+      {state.actionList.map((action) => (
         <Typography variant="h5" gutterBottom align="center">
           {getLastActionText(action, state)}
         </Typography>
