@@ -9,9 +9,10 @@ declare type State = {
   deck: Array<Card>;
   hands: Array<[CardInHand, CardInHand]>;
   currTurn: number;
+  actionPlayed: boolean;
+  challengeUsable: boolean;
   actionStack: Array<PlayerAction>;
   actionList: Array<PlayerAction>;
-  resolutionActions: Array<ResolutionAction>;
   actions: Array<AvailableActions>;
 };
 

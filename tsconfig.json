@@ -16,6 +16,6 @@
     "jsx": "react",
     "baseUrl": "."
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
   "files": ["./typings/global.d.ts", "./typings/sqlite-async.d.ts", "./typings/coup.d.ts"]
 }

@@ -30,9 +30,10 @@ export default class Coup {
       deck,
       hands,
       currTurn: 0,
+      actionPlayed: false,
+      challengeUsable: true,
       actionStack: [],
       actionList: [],
-      resolutionActions: [],
       actions: [],
     };
     this.updateActions();
@@ -44,6 +45,7 @@ export default class Coup {
 
   loadJson(json: string) {
     this.state = JSON.parse(json);
+    this.updateActions();
   }
 
   getState(): State {
@@ -53,11 +55,16 @@ export default class Coup {
   doAction(player: number, action: Action): void {
     if (!this.isActionLegal(player, action)) {
       console.log('Invalid action');
+      throw new Error('Invalid Action');
       return;
     }
     this.state.actionList.push({ player, action });
     if (action.type !== 'Choose') {
+      this.state.actionPlayed = true;
       this.state.actionStack.push({ player, action } as PlayerAction);
+      if (action.type === 'Block') {
+        this.state.challengeUsable = false;
+      }
     } else {
       const lastAction = this.state.actionStack.pop();
       if (lastAction.action.type === 'Challenge') {
@@ -75,39 +82,44 @@ export default class Coup {
 
   handleRevealAfterChallenge(player: number, choose: ChooseAction, challenge: PlayerAction) {
     assert(choose.cards.length === 1);
-    const requiredCard = this.getCardForAction(this.state.actionStack[this.state.actionStack.length - 1].action);
+    const challengedAction = this.state.actionStack[this.state.actionStack.length - 1].action;
+    const requiredCard = this.getCardForAction(challengedAction);
     if (choose.cards[0] === requiredCard) {
-      this.state.resolutionActions.push({ type: 'Discard', player, card: choose.cards[0] });
-      this.state.resolutionActions.push({ type: 'Draw', player });
+      this.executeResolutionAction({ type: 'Discard', player, card: choose.cards[0] });
+      this.executeResolutionAction({ type: 'Draw', player });
       this.state.actionStack.push({
         player: challenge.player,
         action: { type: 'Revealing Influence' },
       });
     } else {
       const failedAction = this.state.actionStack.pop();
-      this.state.resolutionActions.push({ type: 'Flip', card: choose.cards[0], player });
-      if (this.state.actionStack.length > 0) {
+      this.executeResolutionAction({ type: 'Flip', card: choose.cards[0], player });
+      if (challengedAction.type === 'Block') {
         this.resolveAction(this.state.actionStack.pop());
+      } else if (this.state.actionStack.length === 2) {
+        this.state.challengeUsable = false;
       }
     }
   }
 
   handleRevealAfterRevealingInfluence(player: number, action: ChooseAction) {
     assert(action.cards.length === 1);
-    this.state.resolutionActions.push({ type: 'Flip', player, card: action.cards[0] });
-    if (this.state.actionStack.length > 0) {
+    this.executeResolutionAction({ type: 'Flip', player, card: action.cards[0] });
+    if (this.state.actionStack.length > 0 && !this.state.challengeUsable) {
       this.resolveAction(this.state.actionStack.pop());
+    } else if (this.state.actionStack.length > 0) {
+      this.state.challengeUsable = false;
     }
   }
 
   handleRevealAfterExchange(player: number, action: ChooseAction) {
     assert(action.cards.length === 2);
     const cardsToReturn = action.cards;
-    cardsToReturn.map((card) => this.state.resolutionActions.push({ type: 'Discard', player, card }));
+    cardsToReturn.map((card) => this.executeResolutionAction({ type: 'Discard', player, card }));
   }
 
   updateActions(): void {
-    if (this.state.actionStack.length === 0 && this.state.resolutionActions.length > 0) {
+    if (this.state.actionStack.length === 0 && this.state.actionPlayed) {
       this.state.actionStack.push({
         player: this.state.currTurn,
         action: { type: 'Resolving' },
@@ -116,54 +128,55 @@ export default class Coup {
     this.state.actions = this.getActions();
   }
 
-  executeResolutionActions() {
-    for (var action of this.state.resolutionActions) {
-      const { type } = action;
-      console.log('Executing resolution action :' + JSON.stringify(action));
-      switch (action.type) {
-        case 'Discard': {
-          const { player, card } = action;
-          const index = this.state.hands[player].findIndex(
-            (cardInHand) => !cardInHand.flipped && cardInHand.card === card
-          );
-          assert(index !== -1, `Can't remove card ${card} from hand ${JSON.stringify(this.state.hands[player])}`);
-          this.state.hands[player].splice(index, 1);
-          break;
-        }
-        case 'Draw': {
-          assert(this.state.deck.length > 0);
-          const [card] = this.state.deck.splice(0, 1);
-          const { player } = action;
-          this.state.hands[player].push({ card, flipped: false });
-          break;
-        }
-        case 'Flip': {
-          const { player, card } = action;
-          const index = this.state.hands[player].findIndex(
-            (cardInHand) => !cardInHand.flipped && cardInHand.card === card
-          );
-          assert(index !== -1, `Can't flip card ${card} in hand ${JSON.stringify(this.state.hands[player])}`);
-          this.state.hands[player][index].flipped = true;
-          const eliminated = this.state.hands[player].every((card) => card.flipped);
-          this.state.players[player].eliminated = eliminated;
-          break;
-        }
-        case 'Gain Coins': {
-          const { gainingPlayer, coins } = action;
-          this.state.players[gainingPlayer].coins += coins;
-          break;
-        }
-        case 'Lose Coins': {
-          const { losingPlayer, coins } = action;
-          this.state.players[losingPlayer].coins -= coins;
-          break;
-        }
-        default:
-          assert(false, 'Unhandled action type: ' + type);
+  executeResolutionAction(action: ResolutionAction) {
+    const { type } = action;
+    switch (action.type) {
+      case 'Discard': {
+        const { player, card } = action;
+        const index = this.state.hands[player].findIndex(
+          (cardInHand) => !cardInHand.flipped && cardInHand.card === card
+        );
+        assert(index !== -1, `Can't remove card ${card} from hand ${JSON.stringify(this.state.hands[player])}`);
+        this.state.hands[player].splice(index, 1);
+        break;
       }
+      case 'Draw': {
+        assert(this.state.deck.length > 0);
+        const [card] = this.state.deck.splice(0, 1);
+        const { player } = action;
+        this.state.hands[player].push({ card, flipped: false });
+        break;
+      }
+      case 'Flip': {
+        const { player, card } = action;
+        const index = this.state.hands[player].findIndex(
+          (cardInHand) => !cardInHand.flipped && cardInHand.card === card
+        );
+        assert(index !== -1, `Can't flip card ${card} in hand ${JSON.stringify(this.state.hands[player])}`);
+        this.state.hands[player][index].flipped = true;
+        const eliminated = this.state.hands[player].every((card) => card.flipped);
+        this.state.players[player].eliminated = eliminated;
+        break;
+      }
+      case 'Gain Coins': {
+        const { gainingPlayer, coins } = action;
+        this.state.players[gainingPlayer].coins += coins;
+        break;
+      }
+      case 'Lose Coins': {
+        const { losingPlayer, coins } = action;
+        this.state.players[losingPlayer].coins -= coins;
+        break;
+      }
+      default:
+        assert(false, 'Unhandled action type: ' + type);
     }
-    this.state.resolutionActions = [];
+  }
+
+  executeResolutionActions() {
     this.state.actionList = [];
+    this.state.actionPlayed = false;
+    this.state.challengeUsable = true;
     const winner = this.checkForWinner();
     if (winner === null) {
       this.updateCurrTurn();
@@ -172,10 +185,6 @@ export default class Coup {
       this.state.actionStack.push({
         player: winner,
         action: { type: 'Declare Winner' },
-      });
-      this.state.resolutionActions.push({
-        type: 'Game Over',
-        winner,
       });
     }
   }
@@ -191,7 +200,7 @@ export default class Coup {
   resolveAction({ player, action }: PlayerAction) {
     switch (action.type) {
       case 'Assassinate':
-        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 3 });
+        this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: player, coins: 3 });
         this.state.actionStack.push({
           player: action.target,
           action: { type: 'Revealing Influence' },
@@ -214,33 +223,33 @@ export default class Coup {
         }
         break;
       case 'Coup':
-        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
+        this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
         this.state.actionStack.push({
           player: action.target,
           action: { type: 'Revealing Influence' },
         });
         break;
       case 'Exchange':
-        this.state.resolutionActions.push({ type: 'Draw', player });
-        this.state.resolutionActions.push({ type: 'Draw', player });
+        this.executeResolutionAction({ type: 'Draw', player });
+        this.executeResolutionAction({ type: 'Draw', player });
         this.state.actionStack.push({
           player,
           action: { type: 'Exchanging Influence' },
         });
         break;
       case 'Foreign Aid':
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
+        this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
         break;
       case 'Income':
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 1 });
+        this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins: 1 });
         break;
       case 'Steal':
         const coins = Math.min(2, this.state.players[action.target].coins);
-        this.state.resolutionActions.push({ type: 'Lose Coins', losingPlayer: action.target, coins: 2 });
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
+        this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: action.target, coins: 2 });
+        this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
         break;
       case 'Tax':
-        this.state.resolutionActions.push({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
+        this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
         break;
       case 'Resolving':
         this.executeResolutionActions();
@@ -317,12 +326,12 @@ export default class Coup {
       this.state.hands[playerIndex]
         .filter((card) => !card.flipped)
         .map((card) => this.getActionForCharacter(playerIndex, card.card, targets))
-    ).filter((action, index, array) => array.findIndex((a) => a.type === action.type) === index);
+    ).filter(isNotDupllicate);
 
     // bluffActions for player
     const bluffActions = flatten(
       this.getCardsPlayerDoesNotHave(playerIndex).map((card) => this.getActionForCharacter(playerIndex, card, targets))
-    );
+    ).filter(isNotDupllicate);
 
     return { generalActions, characterActions, bluffActions };
   }
@@ -333,15 +342,20 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
-    const generalActions = this.isActionChallengable(actionOnStack.action)
-      ? ([{ type: 'Challenge' }] as Array<ChallengeAction>)
-      : [];
+    const generalActions =
+      this.isActionChallengable(actionOnStack.action) && this.state.challengeUsable
+        ? ([{ type: 'Challenge' }] as Array<ChallengeAction>)
+        : [];
 
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
-    const characterActions = this.getAvailableBlockActionsForCards(actionOnStack.action, usableCards);
+    const characterActions = this.getAvailableBlockActionsForCards(actionOnStack.action, usableCards).filter(
+      isNotDupllicate
+    );
 
     const cardsPlayerDoesNotHave = this.getCardsPlayerDoesNotHave(playerIndex);
-    const bluffActions = this.getAvailableBlockActionsForCards(actionOnStack.action, cardsPlayerDoesNotHave);
+    const bluffActions = this.getAvailableBlockActionsForCards(actionOnStack.action, cardsPlayerDoesNotHave).filter(
+      isNotDupllicate
+    );
 
     return { generalActions, characterActions, bluffActions };
   }
@@ -351,14 +365,9 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
     const cards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
-    const deck0 = this.state.deck[0];
-    const deck1 = this.state.deck[1];
-    cards.push(deck0, deck1);
     const cardCombinations = uniqueCombinations(cards);
     const actions = cardCombinations.map((cards) => ({
       type: 'Choose',
-      blockable: false,
-      challengable: false,
       cards,
     })) as Array<ChooseAction>;
     const chooseActions = {
@@ -386,12 +395,12 @@ export default class Coup {
     }
 
     const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
-    const actions = usableCardsInHand.map((card) => ({
-      type: 'Choose',
-      blockable: false,
-      challengable: false,
-      cards: [card],
-    })) as Array<ChooseAction>;
+    const actions = usableCardsInHand
+      .map((card) => ({
+        type: 'Choose',
+        cards: [card],
+      }))
+      .filter(isNotDupllicate) as Array<ChooseAction>;
     const chooseActions = {
       cards: usableCardsInHand,
       actions,
@@ -405,22 +414,12 @@ export default class Coup {
     }
 
     const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
-
-    // Need to check if the player has any unresolved flips in the resolution queue.
-    const flippedCardsInResolutionActions = this.state.resolutionActions
-      .filter((a) => a.type === 'Flip' && a.player === playerIndex)
-      .map((a) => (a as Flip).card);
-    assert(flippedCardsInResolutionActions.length < 2);
-    if (flippedCardsInResolutionActions.length === 1) {
-      usableCardsInHand.splice(usableCardsInHand.indexOf(flippedCardsInResolutionActions[0]), 1);
-    }
-
-    const actions = usableCardsInHand.map((card) => ({
-      type: 'Choose',
-      blockable: false,
-      challengable: false,
-      cards: [card],
-    })) as Array<ChooseAction>;
+    const actions = usableCardsInHand
+      .map((card) => ({
+        type: 'Choose',
+        cards: [card],
+      }))
+      .filter(isNotDupllicate) as Array<ChooseAction>;
     const chooseActions = {
       cards: usableCardsInHand,
       actions,
@@ -436,7 +435,7 @@ export default class Coup {
 
   // Given a card and an action on the stack return a block action if the card is able to block that action.
   getBlockActionForCharacter(card: Card, actionToBlock: Action): BlockAction | null {
-    const blockAction = { type: 'Block', blockable: false, challengable: true, card } as BlockAction;
+    const blockAction = { type: 'Block', card } as BlockAction;
     switch (card) {
       case 'Contessa':
         if (actionToBlock.type === 'Assassinate') {
@@ -637,4 +636,8 @@ function assert(condition: boolean, message?: string): asserts condition {
     const msg = message ? message : 'Failed assertion';
     throw new Error(msg);
   }
+}
+
+function isNotDupllicate<T>(thing: T, index: number, array: Array<T>): boolean {
+  return array.findIndex((a) => JSON.stringify(a) === JSON.stringify(thing)) === index;
 }

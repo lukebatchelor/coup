@@ -12,7 +12,8 @@
     "dev": "concurrently --kill-others-on-fail 'yarn dev-server' 'yarn dev-client'",
     "dev-server": "ts-node-dev --watch 'src/server/**/*.ts' src/server/server.ts",
     "dev-client": "webpack-dev-server",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@types/copy-webpack-plugin": "^5.0.0",
     "@types/html-webpack-plugin": "^3.2.2",
+    "@types/jest": "^25.2.2",
     "@types/lodash.isequal": "^4.5.5",
     "@types/material-ui": "^0.21.7",
     "@types/node": "^13.9.5",
@@ -49,10 +51,12 @@
     "copy-webpack-plugin": "^5.1.1",
     "html-webpack-plugin": "^4.0.2",
     "husky": "^4.2.3",
+    "jest": "^26.0.1",
     "lint-staged": "^10.0.9",
     "nodemon": "^2.0.2",
     "prettier": "^2.0.2",
     "script-loader": "^0.7.2",
+    "ts-jest": "^26.0.0",
     "ts-loader": "^6.2.2",
     "ts-node": "^8.8.1",
     "ts-node-dev": "^1.0.0-pre.44",
