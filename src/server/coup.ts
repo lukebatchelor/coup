@@ -12,6 +12,7 @@ export default class Coup {
     const players = playersList.map(({ nickname, id }, index) => ({
       index,
       coins: 2,
+      deltaCoins: 0,
       nickname,
       id,
       eliminated: false,
@@ -89,7 +90,7 @@ export default class Coup {
       this.executeResolutionAction({ type: 'Draw', player });
       this.state.actionStack.push({
         player: challenge.player,
-        action: { type: 'Revealing Influence' },
+        action: { type: 'Revealing Influence', reason: 'Failed Challenge' },
       });
     } else {
       const failedAction = this.state.actionStack.pop();
@@ -144,7 +145,7 @@ export default class Coup {
         assert(this.state.deck.length > 0);
         const [card] = this.state.deck.splice(0, 1);
         const { player } = action;
-        this.state.hands[player].push({ card, flipped: false });
+        this.state.hands[player].push({ card, flipped: false, replacing: false });
         break;
       }
       case 'Flip': {
@@ -203,7 +204,7 @@ export default class Coup {
         this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: player, coins: 3 });
         this.state.actionStack.push({
           player: action.target,
-          action: { type: 'Revealing Influence' },
+          action: { type: 'Revealing Influence', reason: 'Assisination' },
         });
         break;
       case 'Block':
@@ -226,7 +227,7 @@ export default class Coup {
         this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: player, coins: 7 });
         this.state.actionStack.push({
           player: action.target,
-          action: { type: 'Revealing Influence' },
+          action: { type: 'Revealing Influence', reason: 'Coup' },
         });
         break;
       case 'Exchange':
@@ -369,6 +370,7 @@ export default class Coup {
     const actions = cardCombinations.map((cards) => ({
       type: 'Choose',
       cards,
+      reason: 'Exchange',
     })) as Array<ChooseAction>;
     const chooseActions = {
       cards,
@@ -394,11 +396,13 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
+    const requiredCard = this.getCardForAction(challengedAction.action);
     const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
-    const actions = usableCardsInHand
+    const actions: Array<ChooseAction> = usableCardsInHand
       .map((card) => ({
         type: 'Choose',
         cards: [card],
+        reason: card === requiredCard ? 'Failed Challenge' : 'Failed Bluff',
       }))
       .filter(isNotDupllicate) as Array<ChooseAction>;
     const chooseActions = {
@@ -413,11 +417,15 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
+    const action = actionOnStack.action;
+    assert(action.type === 'Revealing Influence');
+
     const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
     const actions = usableCardsInHand
       .map((card) => ({
         type: 'Choose',
         cards: [card],
+        reason: action.reason,
       }))
       .filter(isNotDupllicate) as Array<ChooseAction>;
     const chooseActions = {
@@ -638,6 +646,6 @@ function assert(condition: boolean, message?: string): asserts condition {
   }
 }
 
-function isNotDupllicate<T>(thing: T, index: number, array: Array<T>): boolean {
+function isNotDupllicate<T>(thing: T, index: number, array: Array<T>): thing is T {
   return array.findIndex((a) => JSON.stringify(a) === JSON.stringify(thing)) === index;
 }

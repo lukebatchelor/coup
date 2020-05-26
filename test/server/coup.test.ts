@@ -11,8 +11,8 @@ beforeEach(() => {
 
 function getGameWithState({ players, hands, currTurn }: Partial<State>): Coup {
   const defaultPlayers = [
-    { index: 0, coins: 2, nickname: 'jbatch', id: '1', eliminated: false },
-    { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+    { index: 0, coins: 2, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+    { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
   ];
   const deck = [
     'Ambassador',
@@ -29,12 +29,12 @@ function getGameWithState({ players, hands, currTurn }: Partial<State>): Coup {
   ];
   const defaultHands = [
     [
-      { card: 'Duke', flipped: false },
-      { card: 'Captain', flipped: false },
+      { card: 'Duke', flipped: false, replacing: false },
+      { card: 'Captain', flipped: false, replacing: false },
     ],
     [
-      { card: 'Captain', flipped: false },
-      { card: 'Assassin', flipped: false },
+      { card: 'Captain', flipped: false, replacing: false },
+      { card: 'Assassin', flipped: false, replacing: false },
     ],
   ];
   const state = {
@@ -87,8 +87,8 @@ function exchange(): Action {
   return { type: 'Exchange' };
 }
 
-function choose(...cards: Array<Card>): Action {
-  return { type: 'Choose', cards };
+function choose(reason: ChooseReason, ...cards: Array<Card>): Action {
+  return { type: 'Choose', cards, reason };
 }
 
 function block(card: Card): Action {
@@ -107,8 +107,8 @@ function declareWinner(): Action {
   return { type: 'Declare Winner' };
 }
 
-function revealingInfluence(): Action {
-  return { type: 'Revealing Influence' };
+function revealingInfluence(reason: 'Failed Bluff' | 'Failed Challenge' | 'Assisination' | 'Coup'): Action {
+  return { type: 'Revealing Influence', reason };
 }
 
 function exchangingInfluence(): Action {
@@ -181,8 +181,8 @@ describe('No actions on stack', () => {
 
   it('Player can afford coup', () => {
     const players = [
-      { index: 0, coins: 7, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 7, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
     game = getGameWithState({ players });
     const state = game.state;
@@ -193,8 +193,8 @@ describe('No actions on stack', () => {
 
   it('Player has to coup when they have 10 coins', () => {
     const players = [
-      { index: 0, coins: 10, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 10, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
     game = getGameWithState({ players });
     const state = game.state;
@@ -288,8 +288,8 @@ describe('No actions on stack', () => {
 
   it('Playing an unchallenged Assassinate', () => {
     const players = [
-      { index: 0, coins: 3, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 3, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
     game = getGameWithState({ players });
     const state = game.state;
@@ -303,7 +303,7 @@ describe('No actions on stack', () => {
     });
 
     game.resolve();
-    expect(state.actionStack).toStrictEqual([{ player: 1, action: revealingInfluence() }]);
+    expect(state.actionStack).toStrictEqual([{ player: 1, action: revealingInfluence('Assisination') }]);
     expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
     expect(state.actions[1]).toStrictEqual({
       characterActions: [],
@@ -311,25 +311,25 @@ describe('No actions on stack', () => {
       generalActions: [],
       chooseActions: {
         cards: ['Captain', 'Assassin'],
-        actions: [choose('Captain'), choose('Assassin')],
+        actions: [choose('Assisination', 'Captain'), choose('Assisination', 'Assassin')],
       },
     });
 
-    doAction(1, choose('Captain'));
+    doAction(1, choose('Assisination', 'Captain'));
 
     expectResolving();
 
     game.resolve();
     expect(state.players[0].coins).toBe(0);
     expect(state.players[1].coins).toBe(2);
-    expect(state.hands[1][0]).toStrictEqual({ card: 'Captain', flipped: true });
-    expect(state.hands[1][1]).toStrictEqual({ card: 'Assassin', flipped: false });
+    expect(state.hands[1][0]).toStrictEqual({ card: 'Captain', flipped: true, replacing: false });
+    expect(state.hands[1][1]).toStrictEqual({ card: 'Assassin', flipped: false, replacing: false });
   });
 
   it('Playing an Coup', () => {
     const players = [
-      { index: 0, coins: 7, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 7, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
     game = getGameWithState({ players });
     const state = game.state;
@@ -339,7 +339,7 @@ describe('No actions on stack', () => {
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
     game.resolve();
-    expect(state.actionStack).toStrictEqual([{ player: 1, action: revealingInfluence() }]);
+    expect(state.actionStack).toStrictEqual([{ player: 1, action: revealingInfluence('Coup') }]);
     expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
     expect(state.actions[1]).toStrictEqual({
       characterActions: [],
@@ -347,19 +347,19 @@ describe('No actions on stack', () => {
       generalActions: [],
       chooseActions: {
         cards: ['Captain', 'Assassin'],
-        actions: [choose('Captain'), choose('Assassin')],
+        actions: [choose('Coup', 'Captain'), choose('Coup', 'Assassin')],
       },
     });
 
-    doAction(1, choose('Captain'));
+    doAction(1, choose('Coup', 'Captain'));
 
     expectResolving();
 
     game.resolve();
     expect(state.players[0].coins).toBe(0);
     expect(state.players[1].coins).toBe(2);
-    expect(state.hands[1][0]).toStrictEqual({ card: 'Captain', flipped: true });
-    expect(state.hands[1][1]).toStrictEqual({ card: 'Assassin', flipped: false });
+    expect(state.hands[1][0]).toStrictEqual({ card: 'Captain', flipped: true, replacing: false });
+    expect(state.hands[1][1]).toStrictEqual({ card: 'Assassin', flipped: false, replacing: false });
   });
 
   it('Playing an unchallenged Exchange', () => {
@@ -383,32 +383,32 @@ describe('No actions on stack', () => {
       chooseActions: {
         cards: ['Duke', 'Captain', 'Ambassador', 'Ambassador'],
         actions: [
-          choose('Duke', 'Captain'),
-          choose('Duke', 'Ambassador'),
-          choose('Captain', 'Ambassador'),
-          choose('Ambassador', 'Ambassador'),
+          choose('Exchange', 'Duke', 'Captain'),
+          choose('Exchange', 'Duke', 'Ambassador'),
+          choose('Exchange', 'Captain', 'Ambassador'),
+          choose('Exchange', 'Ambassador', 'Ambassador'),
         ],
       },
     });
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
-    doAction(0, choose('Captain', 'Ambassador'));
+    doAction(0, choose('Exchange', 'Captain', 'Ambassador'));
 
     expectResolving();
 
     game.resolve();
     expect(state.players[0].coins).toBe(2);
     expect(state.players[1].coins).toBe(2);
-    expect(state.hands[0][0]).toStrictEqual({ card: 'Duke', flipped: false });
-    expect(state.hands[0][1]).toStrictEqual({ card: 'Ambassador', flipped: false });
+    expect(state.hands[0][0]).toStrictEqual({ card: 'Duke', flipped: false, replacing: false });
+    expect(state.hands[0][1]).toStrictEqual({ card: 'Ambassador', flipped: false, replacing: false });
   });
 });
 
 describe('Blocking', () => {
   it('Player blocks action and is not challenged', () => {
     const players = [
-      { index: 0, coins: 3, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 3, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
     game = getGameWithState({ players });
     const state = game.state;
@@ -435,8 +435,8 @@ describe('Blocking', () => {
 
   it('Player blocks action and is challenged successfully', () => {
     const players = [
-      { index: 0, coins: 3, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 3, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
     game = getGameWithState({ players });
     const state = game.state;
@@ -464,10 +464,13 @@ describe('Blocking', () => {
       bluffActions: [],
       characterActions: [],
       generalActions: [],
-      chooseActions: { cards: ['Captain', 'Assassin'], actions: [choose('Captain'), choose('Assassin')] },
+      chooseActions: {
+        cards: ['Captain', 'Assassin'],
+        actions: [choose('Failed Bluff', 'Captain'), choose('Failed Bluff', 'Assassin')],
+      },
     });
 
-    doAction(1, choose('Captain'));
+    doAction(1, choose('Failed Bluff', 'Captain'));
 
     expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
     // Lose card for assassination
@@ -475,10 +478,10 @@ describe('Blocking', () => {
       bluffActions: [],
       characterActions: [],
       generalActions: [],
-      chooseActions: { cards: ['Assassin'], actions: [choose('Assassin')] },
+      chooseActions: { cards: ['Assassin'], actions: [choose('Assisination', 'Assassin')] },
     });
 
-    doAction(1, choose('Assassin'));
+    doAction(1, choose('Assisination', 'Assassin'));
     expectResolving();
 
     game.resolve();
@@ -488,19 +491,19 @@ describe('Blocking', () => {
 
   it('Player blocks action and is challenged unsuccessfully', () => {
     const players = [
-      { index: 0, coins: 3, nickname: 'jbatch', id: '1', eliminated: false },
-      { index: 1, coins: 2, nickname: 'lbatch', id: '2', eliminated: false },
+      { index: 0, coins: 3, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+      { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
     ];
-    const hands = [
+    const hands: Array<[CardInHand, CardInHand]> = [
       [
-        { card: 'Assassin', flipped: false },
-        { card: 'Assassin', flipped: false },
+        { card: 'Assassin', flipped: false, replacing: false },
+        { card: 'Assassin', flipped: false, replacing: false },
       ],
       [
-        { card: 'Contessa', flipped: false },
-        { card: 'Contessa', flipped: false },
+        { card: 'Contessa', flipped: false, replacing: false },
+        { card: 'Contessa', flipped: false, replacing: false },
       ],
-    ] as Array<[CardInHand, CardInHand]>;
+    ];
     game = getGameWithState({ players, hands });
     const state = game.state;
 
@@ -527,20 +530,20 @@ describe('Blocking', () => {
       bluffActions: [],
       characterActions: [],
       generalActions: [],
-      chooseActions: { cards: ['Contessa', 'Contessa'], actions: [choose('Contessa')] },
+      chooseActions: { cards: ['Contessa', 'Contessa'], actions: [choose('Failed Challenge', 'Contessa')] },
     });
 
-    doAction(1, choose('Contessa'));
+    doAction(1, choose('Failed Challenge', 'Contessa'));
     // Lose card for failed challenge.
     expect(state.actions[0]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
       generalActions: [],
-      chooseActions: { cards: ['Assassin', 'Assassin'], actions: [choose('Assassin')] },
+      chooseActions: { cards: ['Assassin', 'Assassin'], actions: [choose('Failed Challenge', 'Assassin')] },
     });
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
-    doAction(0, choose('Assassin'));
+    doAction(0, choose('Failed Challenge', 'Assassin'));
     expectResolving();
 
     expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
@@ -548,12 +551,12 @@ describe('Blocking', () => {
 
     game.resolve();
     expect(state.hands[0]).toStrictEqual([
-      { card: 'Assassin', flipped: true },
-      { card: 'Assassin', flipped: false },
+      { card: 'Assassin', flipped: true, replacing: false },
+      { card: 'Assassin', flipped: false, replacing: false },
     ]);
     expect(state.hands[1]).toStrictEqual([
-      { card: 'Contessa', flipped: false },
-      { card: 'Ambassador', flipped: false },
+      { card: 'Contessa', flipped: false, replacing: false },
+      { card: 'Ambassador', flipped: false, replacing: false },
     ]);
   });
 });
@@ -578,18 +581,18 @@ describe('Challenging', () => {
       generalActions: [],
       chooseActions: {
         cards: ['Duke', 'Captain'],
-        actions: [choose('Duke'), choose('Captain')],
+        actions: [choose('Failed Bluff', 'Duke'), choose('Failed Bluff', 'Captain')],
       },
     });
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
-    doAction(0, choose('Duke'));
+    doAction(0, choose('Failed Bluff', 'Duke'));
     expectResolving();
 
     game.resolve();
     expect(state.hands[0]).toStrictEqual([
-      { card: 'Duke', flipped: true },
-      { card: 'Captain', flipped: false },
+      { card: 'Duke', flipped: true, replacing: false },
+      { card: 'Captain', flipped: false, replacing: false },
     ]);
   });
 
@@ -613,12 +616,12 @@ describe('Challenging', () => {
         generalActions: [],
         chooseActions: {
           cards: ['Duke', 'Captain'],
-          actions: [choose('Duke'), choose('Captain')],
+          actions: [choose('Failed Bluff', 'Duke'), choose('Failed Challenge', 'Captain')],
         },
       });
       expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
-      doAction(0, choose('Captain'));
+      doAction(0, choose('Failed Challenge', 'Captain'));
     });
 
     it('with no block', () => {
@@ -631,11 +634,11 @@ describe('Challenging', () => {
         generalActions: [],
         chooseActions: {
           cards: ['Captain', 'Assassin'],
-          actions: [choose('Captain'), choose('Assassin')],
+          actions: [choose('Failed Challenge', 'Captain'), choose('Failed Challenge', 'Assassin')],
         },
       });
 
-      doAction(1, choose('Assassin'));
+      doAction(1, choose('Failed Challenge', 'Assassin'));
       expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
       expect(state.actions[1]).toStrictEqual({
         bluffActions: [block('Ambassador')],
@@ -657,12 +660,12 @@ describe('Challenging', () => {
         generalActions: [],
         chooseActions: {
           cards: ['Captain', 'Assassin'],
-          actions: [choose('Captain'), choose('Assassin')],
+          actions: [choose('Failed Challenge', 'Captain'), choose('Failed Challenge', 'Assassin')],
         },
       });
 
       // Lose card for failing the initial challenge
-      doAction(1, choose('Assassin'));
+      doAction(1, choose('Failed Challenge', 'Assassin'));
       expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
       expect(state.actions[1]).toStrictEqual({
         bluffActions: [block('Ambassador')],
@@ -692,12 +695,12 @@ describe('Challenging', () => {
         generalActions: [],
         chooseActions: {
           cards: ['Captain', 'Assassin'],
-          actions: [choose('Captain'), choose('Assassin')],
+          actions: [choose('Failed Challenge', 'Captain'), choose('Failed Challenge', 'Assassin')],
         },
       });
 
       // Lose card for failing the initial challenge
-      doAction(1, choose('Assassin'));
+      doAction(1, choose('Failed Challenge', 'Assassin'));
       expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
       expect(state.actions[1]).toStrictEqual({
         bluffActions: [block('Ambassador')],
@@ -719,33 +722,36 @@ describe('Challenging', () => {
         bluffActions: [],
         characterActions: [],
         generalActions: [],
-        chooseActions: { cards: ['Captain'], actions: [choose('Captain')] },
+        chooseActions: { cards: ['Captain'], actions: [choose('Failed Challenge', 'Captain')] },
       });
 
-      doAction(1, choose('Captain'));
+      doAction(1, choose('Failed Challenge', 'Captain'));
       expect(state.actions[0]).toStrictEqual({
         bluffActions: [],
         characterActions: [],
         generalActions: [],
-        chooseActions: { cards: ['Duke', 'Ambassador'], actions: [choose('Duke'), choose('Ambassador')] },
+        chooseActions: {
+          cards: ['Duke', 'Ambassador'],
+          actions: [choose('Failed Challenge', 'Duke'), choose('Failed Challenge', 'Ambassador')],
+        },
       });
       expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
-      doAction(0, choose('Duke'));
+      doAction(0, choose('Failed Challenge', 'Duke'));
       expectResolving();
 
       game.resolve();
       // Player 0 started with Duke/Captain and discarded the Captain to win a challenge then had to flip
       // the Duke after failing the opponent's block.
       expect(state.hands[0]).toStrictEqual([
-        { card: 'Duke', flipped: true },
-        { card: 'Ambassador', flipped: false },
+        { card: 'Duke', flipped: true, replacing: false },
+        { card: 'Ambassador', flipped: false, replacing: false },
       ]);
       // Player 1 started with Captain/Assassin and flipped the Asassin after failing the initial challenge,
       // then discarded the Captain to win the challenged block.
       expect(state.hands[1]).toStrictEqual([
-        { card: 'Assassin', flipped: true },
-        { card: 'Ambassador', flipped: false },
+        { card: 'Assassin', flipped: true, replacing: false },
+        { card: 'Ambassador', flipped: false, replacing: false },
       ]);
     });
 
@@ -759,12 +765,12 @@ describe('Challenging', () => {
         generalActions: [],
         chooseActions: {
           cards: ['Captain', 'Assassin'],
-          actions: [choose('Captain'), choose('Assassin')],
+          actions: [choose('Failed Challenge', 'Captain'), choose('Failed Challenge', 'Assassin')],
         },
       });
 
       // Lose card for failing the initial challenge
-      doAction(1, choose('Assassin'));
+      doAction(1, choose('Failed Challenge', 'Assassin'));
       expect(state.actions[0]).toStrictEqual(EMPTY_ACTION);
       expect(state.actions[1]).toStrictEqual({
         bluffActions: [block('Ambassador')],
@@ -786,10 +792,10 @@ describe('Challenging', () => {
         bluffActions: [],
         characterActions: [],
         generalActions: [],
-        chooseActions: { cards: ['Captain'], actions: [choose('Captain')] },
+        chooseActions: { cards: ['Captain'], actions: [choose('Failed Bluff', 'Captain')] },
       });
 
-      doAction(1, choose('Captain'));
+      doAction(1, choose('Failed Bluff', 'Captain'));
       expectResolving();
 
       game.resolve();

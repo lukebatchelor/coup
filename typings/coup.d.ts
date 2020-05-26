@@ -50,7 +50,10 @@ declare type StealAction = { type: 'Steal'; target: number };
 declare type BlockAction = { type: 'Block'; card: Card };
 
 // Other actions that can be on the stack but are not put there by players.
-declare type RevealingInfluence = { type: 'Revealing Influence' };
+declare type RevealingInfluence = {
+  type: 'Revealing Influence';
+  reason: 'Failed Bluff' | 'Failed Challenge' | 'Assisination' | 'Coup';
+};
 declare type Exchanging = { type: 'Exchanging Influence' };
 declare type Resolving = { type: 'Resolving' };
 declare type DeclareWinner = { type: 'Declare Winner' };
