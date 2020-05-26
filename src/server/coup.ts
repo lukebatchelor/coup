@@ -86,11 +86,10 @@ export default class Coup {
     const challengedAction = this.state.actionStack[this.state.actionStack.length - 1].action;
     const requiredCard = this.getCardForAction(challengedAction);
     if (choose.cards[0] === requiredCard) {
-      this.executeResolutionAction({ type: 'Discard', player, card: choose.cards[0] });
-      this.executeResolutionAction({ type: 'Draw', player });
+      this.executeResolutionAction({ type: 'Return', player, card: choose.cards[0] });
       this.state.actionStack.push({
         player: challenge.player,
-        action: { type: 'Revealing Influence', reason: 'Failed Challenge' },
+        action: { type: 'Revealing Influence', reason: 'Succeeded Challenge' },
       });
     } else {
       const failedAction = this.state.actionStack.pop();
@@ -116,7 +115,7 @@ export default class Coup {
   handleRevealAfterExchange(player: number, action: ChooseAction) {
     assert(action.cards.length === 2);
     const cardsToReturn = action.cards;
-    cardsToReturn.map((card) => this.executeResolutionAction({ type: 'Discard', player, card }));
+    cardsToReturn.map((card) => this.executeResolutionAction({ type: 'Return', player, card }));
   }
 
   updateActions(): void {
@@ -141,6 +140,15 @@ export default class Coup {
         this.state.hands[player].splice(index, 1);
         break;
       }
+      case 'Return': {
+        const { player, card } = action;
+        const index = this.state.hands[player].findIndex(
+          (cardInHand) => !cardInHand.flipped && cardInHand.card === card
+        );
+        assert(index !== -1, `Can't remove card ${card} from hand ${JSON.stringify(this.state.hands[player])}`);
+        this.state.hands[player][index].replacing = true;
+        break;
+      }
       case 'Draw': {
         assert(this.state.deck.length > 0);
         const [card] = this.state.deck.splice(0, 1);
@@ -162,11 +170,13 @@ export default class Coup {
       case 'Gain Coins': {
         const { gainingPlayer, coins } = action;
         this.state.players[gainingPlayer].coins += coins;
+        this.state.players[gainingPlayer].deltaCoins = coins;
         break;
       }
       case 'Lose Coins': {
         const { losingPlayer, coins } = action;
         this.state.players[losingPlayer].coins -= coins;
+        this.state.players[losingPlayer].deltaCoins = coins;
         break;
       }
       default:
@@ -180,10 +190,25 @@ export default class Coup {
     this.state.challengeUsable = true;
     const winner = this.checkForWinner();
     if (winner === null) {
+      // If any player has cards that were revealed and need to be replaced do that now before the turn is over
+      for (let i = 0; i < this.state.players.length; i++) {
+        const cardIndexTooReplace = this.state.hands[i].findIndex((card) => card.replacing);
+        if (cardIndexTooReplace !== -1) {
+          const card = this.drawCardFromDeck();
+          this.state.deck.push(this.state.hands[i][cardIndexTooReplace].card);
+          this.state.hands[i].splice(cardIndexTooReplace, 1);
+          this.state.hands[i].push({ card, flipped: false, replacing: false });
+          this.state.deck = shuffle([...this.state.deck]);
+        }
+      }
       this.updateCurrTurn();
     } else {
       // We have a winner
       this.state.actionStack.push({
+        player: winner,
+        action: { type: 'Declare Winner' },
+      });
+      this.state.actionList.push({
         player: winner,
         action: { type: 'Declare Winner' },
       });
@@ -420,7 +445,9 @@ export default class Coup {
     const action = actionOnStack.action;
     assert(action.type === 'Revealing Influence');
 
-    const usableCardsInHand = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+    const usableCardsInHand = this.state.hands[playerIndex]
+      .filter((card) => !card.flipped && !card.replacing)
+      .map((card) => card.card);
     const actions = usableCardsInHand
       .map((card) => ({
         type: 'Choose',
