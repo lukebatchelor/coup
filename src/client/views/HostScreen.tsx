@@ -58,11 +58,11 @@ function getLastActionText(playerAction: PlayerAction, state: GameState) {
       if (action.reason === 'Exchange') return `${playerName} exchanged ${action.cards.length} cards`;
       if (action.reason === 'Assisination') return `${playerName} revealed ${action.cards[0]} for assasination`;
       if (action.reason === 'Coup') return `${playerName} revealed ${action.cards[0]} for coup`;
-      if (action.reason === 'Failed Bluff') return `${playerName} revealed ${action.cards[0]} for failed bluff`;
+      if (action.reason === 'Failed Bluff') return `${playerName} failed the challenge and revealed ${action.cards[0]}`;
       if (action.reason === 'Failed Challenge')
-        return `${playerName} revealed ${action.cards[0]} due to an incorrect challenge`;
-      if (action.reason === 'Succeeded Challenge')
         return `${playerName} revealed ${action.cards[0]} to beat the challenge`;
+      if (action.reason === 'Succeeded Challenge')
+        return `${playerName} failed the challenge and revealed a ${action.cards[0]}`;
 
       // Fallback?? Shouldn't hit?
       return `${playerName} revealed a ${action.cards[0]}`;

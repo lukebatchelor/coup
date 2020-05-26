@@ -104,6 +104,7 @@ function ActionGroup(props: ActionGroupProps) {
             fullWidth
             variant="contained"
             color="primary"
+            key={`action-${idx}`}
             className={classes.actionButton}
             onClick={() => onActionSelected(action)}
             disabled={action.type === 'Assassinate' && action.disabled}
