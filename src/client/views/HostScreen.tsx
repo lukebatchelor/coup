@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box, Button } from '@material-ui/core';
-import { State, getStateInfo } from './PlayingScreen/types';
+import { getStateInfo } from './PlayingScreen/types';
 import { SocketContext, PlayerContext } from '../contexts';
 
 const NO_ACTION_TIMEOUT_MS = 10000;
@@ -68,24 +68,24 @@ function getResolvedState(state: GameState, resolutionCount: number) {
   }
   // create copy of state to modify
   const resolvedState: GameState = JSON.parse(JSON.stringify(state));
-  const { resolutionActions } = state;
-  for (let i = 0; i < resolutionCount; i++) {
-    const action = resolutionActions[i];
-    if (action.type === 'Flip') {
-      resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
-    } else if (action.type === 'Discard') {
-      resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
-    } else if (action.type === 'Draw') {
-      const prevAction = resolutionActions[i - 1];
-      if (prevAction.type === 'Discard') {
-        resolvedState.hands[prevAction.player].find((card) => card.card === prevAction.card).flipped = false;
-      }
-    } else if (action.type === 'Gain Coins') {
-      resolvedState.players[action.gainingPlayer].coins += action.coins;
-    } else if (action.type === 'Lose Coins') {
-      resolvedState.players[action.losingPlayer].coins -= action.coins;
-    }
-  }
+  const { actionList } = state;
+  // for (let i = 0; i < resolutionCount; i++) {
+  //   const action = resolutionActions[i];
+  //   if (action.type === 'Flip') {
+  //     resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
+  //   } else if (action.type === 'Discard') {
+  //     resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
+  //   } else if (action.type === 'Draw') {
+  //     const prevAction = resolutionActions[i - 1];
+  //     if (prevAction.type === 'Discard') {
+  //       resolvedState.hands[prevAction.player].find((card) => card.card === prevAction.card).flipped = false;
+  //     }
+  //   } else if (action.type === 'Gain Coins') {
+  //     resolvedState.players[action.gainingPlayer].coins += action.coins;
+  //   } else if (action.type === 'Lose Coins') {
+  //     resolvedState.players[action.losingPlayer].coins -= action.coins;
+  //   }
+  // }
 
   return resolvedState;
 }
@@ -112,9 +112,9 @@ export function HostScreen(props: HostScreenProps) {
   const [resolutionCount, setResolutionCount] = useState<number>(0);
 
   function resolveAction() {
-    if (resolutionCount === state.resolutionActions.length) {
-      return socket.emit('resolve-action');
-    }
+    return socket.emit('resolve-action');
+    // if (resolutionCount === state.resolutionActions.length) {
+    // }
     setResolutionCount(resolutionCount + 1);
   }
 
@@ -136,7 +136,7 @@ export function HostScreen(props: HostScreenProps) {
   if (!state) return <div>Loading...</div>;
 
   const resolvedState = getResolvedState(state, resolutionCount);
-  const debugResolveText = `Resolution action: ${resolutionCount}/${state.resolutionActions.length}`;
+  const debugResolveText = `Resolution action: ${resolutionCount}/???`;
   return (
     <Container maxWidth="lg">
       {state.actionList.length === 0 && (
@@ -166,7 +166,7 @@ export function HostScreen(props: HostScreenProps) {
               </Box>
               <Grid container>
                 {resolvedState.hands[player.index].map((card) => {
-                  const cardUrl = card.flipped ? '/card.png' : '/card-back.png';
+                  const cardUrl = card.flipped || card.replacing ? '/card.png' : '/card-back.png';
                   return (
                     <Grid item xs={6}>
                       <img src={cardUrl} className={classes.card} alt={card.card} />

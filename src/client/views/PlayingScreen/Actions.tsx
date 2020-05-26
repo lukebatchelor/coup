@@ -67,6 +67,7 @@ function actionToString(action: Action, state: GameState) {
   if (action.type === 'Coup') return `Coup ${state.players[action.target].nickname}`;
   if (action.type === 'Assassinate') return `Assasinate ${state.players[action.target].nickname}`;
   if (action.type === 'Steal') return `Steal from ${state.players[action.target].nickname}`;
+  if (action.type === 'Block') return `Block with ${action.card}`;
 
   return action.type;
 }

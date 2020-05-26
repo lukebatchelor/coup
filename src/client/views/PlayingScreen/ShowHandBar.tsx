@@ -59,7 +59,7 @@ type ShowHandDrawerProps = {
   closeHandDrawer: () => void;
   allowSelection: number;
   onSelection: (selected: Array<number>) => void;
-  cards: Array<CardInHand>;
+  cards: Array<Omit<CardInHand, 'replacing'>>;
 };
 export function ShowHandDrawer(props: ShowHandDrawerProps) {
   const classes = useStyles();

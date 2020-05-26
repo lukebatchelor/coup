@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { makeStyles, Container, AppBar, Box, Toolbar, ButtonGroup, Button, Typography } from '@material-ui/core';
 import { PlayerContext, SocketContext } from '../../contexts';
 import { ShowHandBar, ShowHandDrawer } from './ShowHandBar';
-import { Phase, State, getStateInfo } from './types';
+import { getStateInfo } from './types';
 import { Actions } from './Actions';
 
 const useStyles = makeStyles((theme) => ({}));

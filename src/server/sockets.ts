@@ -136,8 +136,8 @@ export function configureSockets(appServer: http.Server) {
       const coup = new Coup([]);
       coup.loadJson(room.gameState);
 
-      const { actionStack, actions, players, resolutionActions, hands, currTurn, actionList }: GameState = coup.state;
-      const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands, actionList };
+      const { actionStack, actions, players, hands, currTurn, actionList }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, currTurn, hands, actionList };
       safeEmit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState, hostId });
     }
 
@@ -158,8 +158,8 @@ export function configureSockets(appServer: http.Server) {
         coup.doAction(playerIndex, action);
         await setGameStateForRoom(user.roomCode, coup.dumpJson());
       }
-      const { actionStack, actions, players, resolutionActions, hands, currTurn, actionList }: GameState = coup.state;
-      const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands, actionList };
+      const { actionStack, actions, players, hands, currTurn, actionList }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, currTurn, hands, actionList };
 
       safeRoomEmit(user.roomCode, 'game-state', {
         roomCode: user.roomCode,
@@ -180,8 +180,8 @@ export function configureSockets(appServer: http.Server) {
       coup.resolve();
       await setGameStateForRoom(user.roomCode, coup.dumpJson());
 
-      const { actionStack, actions, players, resolutionActions, hands, currTurn, actionList }: GameState = coup.state;
-      const gameState = { actionStack, actions, players, resolutionActions, currTurn, hands, actionList };
+      const { actionStack, actions, players, hands, currTurn, actionList }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, currTurn, hands, actionList };
 
       safeRoomEmit(user.roomCode, 'game-state', {
         roomCode: user.roomCode,

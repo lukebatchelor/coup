@@ -1,7 +1,7 @@
 // declare var io: any;
 
 declare type User = { id: string; nickName: string; roomCode: string; host: boolean };
-declare type GameState = Omit<State, 'deck'>;
+declare type GameState = Omit<State, 'deck' | 'actionPlayed' | 'challengeUsable'>;
 
 declare type HandshakeMessage = { id: string };
 declare type DisconnectMessage = {};

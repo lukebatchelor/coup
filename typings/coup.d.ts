@@ -1,8 +1,15 @@
-declare type Player = { index: number; coins: number; nickname: string; id: string; eliminated: boolean };
+declare type Player = {
+  index: number;
+  coins: number;
+  deltaCoins: number;
+  nickname: string;
+  id: string;
+  eliminated: boolean;
+};
 
 // Cards
 declare type Card = 'Captain' | 'Contessa' | 'Duke' | 'Assassin' | 'Ambassador';
-declare type CardInHand = { card: Card; flipped: boolean };
+declare type CardInHand = { card: Card; flipped: boolean; replacing: boolean };
 
 declare type State = {
   players: Array<Player>;
@@ -33,6 +40,7 @@ declare type ForeinAidAction = { type: 'Foreign Aid' };
 declare type CoupAction = { type: 'Coup'; target: number };
 declare type ChallengeAction = { type: 'Challenge' };
 declare type RevealAction = { type: 'Reveal'; card: Card };
+declare type PassAction = { type: 'Pass' };
 
 // Character/Bluff Actions
 declare type TaxAction = { type: 'Tax' };
@@ -46,12 +54,14 @@ declare type RevealingInfluence = { type: 'Revealing Influence' };
 declare type Exchanging = { type: 'Exchanging Influence' };
 declare type Resolving = { type: 'Resolving' };
 declare type DeclareWinner = { type: 'Declare Winner' };
-declare type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner;
+declare type ResolvedAction = { type: 'Resolved Action'; action: PlayerAction };
+declare type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner | ResolvedAction;
 
+declare type ChooseReason = 'Exchange' | 'Failed Bluff' | 'Failed Challenge' | 'Assisination' | 'Coup';
 // ChooseAction - used after assassinate/coup/challenge/exchange
-declare type ChooseAction = { type: 'Choose'; cards: Array<Card> };
+declare type ChooseAction = { type: 'Choose'; cards: Array<Card>; reason: ChooseReason };
 
-declare type GeneralAction = IncomeAction | ForeinAidAction | CoupAction | ChallengeAction | RevealAction;
+declare type GeneralAction = IncomeAction | ForeinAidAction | CoupAction | ChallengeAction | RevealAction | PassAction;
 declare type CharacterAction = TaxAction | AssassinateAction | ExchangeAction | StealAction | BlockAction;
 
 declare type Action = GeneralAction | CharacterAction | ChooseAction | OtherAction;
