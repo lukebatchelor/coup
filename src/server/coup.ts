@@ -200,6 +200,7 @@ export default class Coup {
           this.state.hands[i].push({ card, flipped: false, replacing: false });
           this.state.deck = shuffle([...this.state.deck]);
         }
+        this.state.players[i].deltaCoins = 0;
       }
       this.updateCurrTurn();
     } else {
