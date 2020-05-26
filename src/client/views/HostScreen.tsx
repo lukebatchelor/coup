@@ -19,6 +19,9 @@ const useStyles = makeStyles((theme) => ({
 
     width: '100%',
   },
+  eliminated: {
+    filter: 'grayscale(1)',
+  },
 }));
 
 function getLastActionText(playerAction: PlayerAction, state: GameState) {
@@ -52,6 +55,16 @@ function getLastActionText(playerAction: PlayerAction, state: GameState) {
     case 'Exchanging Influence':
       return `${playerName} is exchanging cards with the deck`;
     case 'Choose':
+      if (action.reason === 'Exchange') return `${playerName} exchanged ${action.cards.length} cards`;
+      if (action.reason === 'Assisination') return `${playerName} revealed ${action.cards[0]} for assasination`;
+      if (action.reason === 'Coup') return `${playerName} revealed ${action.cards[0]} for coup`;
+      if (action.reason === 'Failed Bluff') return `${playerName} revealed ${action.cards[0]} for failed bluff`;
+      if (action.reason === 'Failed Challenge')
+        return `${playerName} revealed ${action.cards[0]} due to an incorrect challenge`;
+      if (action.reason === 'Succeeded Challenge')
+        return `${playerName} revealed ${action.cards[0]} to beat the challenge`;
+
+      // Fallback?? Shouldn't hit?
       return `${playerName} revealed a ${action.cards[0]}`;
     case 'Revealing Influence':
       return `${playerName} must reveal a card!`;
@@ -137,6 +150,7 @@ export function HostScreen(props: HostScreenProps) {
 
   const resolvedState = getResolvedState(state, resolutionCount);
   const debugResolveText = `Resolution action: ${resolutionCount}/???`;
+
   return (
     <Container maxWidth="lg">
       {state.actionList.length === 0 && (
@@ -152,31 +166,37 @@ export function HostScreen(props: HostScreenProps) {
 
       <Box mt={2} />
       <Grid container spacing={3} justify="center">
-        {resolvedState.players.map((player) => (
-          <Grid item xs={3}>
-            <Paper className={classes.paper}>
-              <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
-                <Avatar alt={player.nickname} src="/" />
-                <Box ml={1} />
-                <Typography>{player.nickname}</Typography>
-                <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
-                  <img src="coin.png" className={classes.coin}></img>
-                  <Typography>{player.coins}</Typography>
+        {resolvedState.players.map((player) => {
+          const { deltaCoins } = player;
+          const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${deltaCoins}`);
+          return (
+            <Grid item xs={3} className={player.eliminated && classes.eliminated}>
+              <Paper className={classes.paper}>
+                <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
+                  <Avatar alt={player.nickname} src="/" />
+                  <Box ml={1} />
+                  <Typography>{player.nickname}</Typography>
+                  <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
+                    <img src="coin.png" className={classes.coin}></img>
+                    <Typography>
+                      {player.coins} {deltaCoinsStr || ''}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-              <Grid container>
-                {resolvedState.hands[player.index].map((card) => {
-                  const cardUrl = card.flipped || card.replacing ? '/card.png' : '/card-back.png';
-                  return (
-                    <Grid item xs={6}>
-                      <img src={cardUrl} className={classes.card} alt={card.card} />
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            </Paper>
-          </Grid>
-        ))}
+                <Grid container>
+                  {resolvedState.hands[player.index].slice(0, 2).map((card) => {
+                    const cardUrl = card.flipped || card.replacing ? '/card.png' : '/card-back.png';
+                    return (
+                      <Grid item xs={6}>
+                        <img src={cardUrl} className={classes.card} alt={card.card} />
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Paper>
+            </Grid>
+          );
+        })}
       </Grid>
       <Button
         type="button"

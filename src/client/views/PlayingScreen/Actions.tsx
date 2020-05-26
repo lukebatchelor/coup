@@ -30,33 +30,46 @@ function lastActionToInfoText(state: GameState) {
   const playerName = state.players[player].nickname;
   const hasChooseActions = !!state.actions[me.index].chooseActions;
 
+  const playerIsOrYouAre = state.players[player].id === me.id ? `You are` : `${playerName} is`;
   switch (action.type) {
     case 'Income':
-      return `${playerName} is collecting income (+1 coin)`;
+      return `${playerIsOrYouAre} collecting income (+1 coin)`;
     case 'Foreign Aid':
-      return `${playerName} is collecting foreign aid (+2 coins)`;
+      return `${playerIsOrYouAre} collecting foreign aid (+2 coins)`;
     case 'Coup':
-      return `${playerName} is paying 7 coins  to stage a coup against ${nameOrYou(action.target)}`;
+      return `${playerIsOrYouAre} paying 7 coins  to stage a coup against ${nameOrYou(action.target)}`;
     case 'Tax':
-      return `${playerName} is collecting tax as the Duke (+3 coins)`;
+      return `${playerIsOrYouAre} collecting tax as the Duke (+3 coins)`;
     case 'Assassinate':
-      return `${playerName} is paying 3 coins to assasinate ${nameOrYou(action.target)}`;
+      return `${playerIsOrYouAre} paying 3 coins to assasinate ${nameOrYou(action.target)}`;
     case 'Exchange':
-      return `${playerName} is exchanging cards with the deck`;
+      return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Steal':
-      return `${playerName} is stealing coins from ${nameOrYou(action.target)}`;
+      return `${playerIsOrYouAre} stealing coins from ${nameOrYou(action.target)}`;
     case 'Challenge':
       if (hasChooseActions)
-        return `${playerName} is challenging your action. Choose a card to either prove your claim or to discard for bluffing!`;
-      return `${playerName} is challenging the action!`;
+        return `${playerIsOrYouAre} challenging your action. Choose a card to either prove your claim or to discard for bluffing!`;
+      return `${playerIsOrYouAre} challenging the action!`;
     case 'Block':
-      return `${playerName} is blocking the action using a ${action.card}`;
+      return `${playerIsOrYouAre} blocking the action using a ${action.card}`;
     case 'Exchanging Influence':
       if (isMyTurn) return 'Select two cards to put back in the deck';
-      return `${playerName} is exchanging cards with the deck`;
+      return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Revealing Influence':
       if (hasChooseActions) return 'Choose a card to reveal';
       return `${nameOrYou(player)} must reveal a card!`;
+    case 'Resolved Action':
+      return 'End of turn';
+    case 'Choose':
+      if (action.reason === 'Exchange') return `${playerName} exchanged ${action.cards.length} cards`;
+      if (action.reason === 'Assisination') return `${playerName} revealed ${action.cards[0]} for assasination`;
+      if (action.reason === 'Coup') return `${playerName} revealed ${action.cards[0]} for coup`;
+      if (action.reason === 'Failed Bluff') return `${playerName} revealed ${action.cards[0]} for failed bluff`;
+      if (action.reason === 'Failed Challenge')
+        return `${playerName} revealed ${action.cards[0]} due to a incorrect challenge`;
+
+      // Fallback?? Shouldn't hit?
+      return `${playerName} revealed a ${action.cards[0]}`;
   }
 }
 
