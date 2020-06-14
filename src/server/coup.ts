@@ -136,8 +136,8 @@ export default class Coup {
 
   handleRevealAfterExchange(player: number, action: ChooseAction) {
     assert(action.cards.length === 2);
-    const cardsToReturn = action.cards;
-    cardsToReturn.map((card) => this.executeResolutionAction({ type: 'Return', player, card }));
+    const cardsToReturn = [...action.cards];
+    cardsToReturn.map((card) => this.executeResolutionAction({ type: 'Discard', player, card }));
   }
 
   updateActions(): void {
@@ -186,7 +186,7 @@ export default class Coup {
       case 'Return': {
         const { player, card } = action;
         const index = this.state.hands[player].findIndex(
-          (cardInHand) => !cardInHand.flipped && cardInHand.card === card
+          (cardInHand) => !cardInHand.flipped && cardInHand.card === card && !cardInHand.replacing
         );
         assert(index !== -1, `Can't remove card ${card} from hand ${JSON.stringify(this.state.hands[player])}`);
         this.state.hands[player][index].replacing = true;

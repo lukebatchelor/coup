@@ -403,8 +403,9 @@ describe('No actions on stack', () => {
     game.resolve();
     expect(state.players[0].coins).toBe(2);
     expect(state.players[1].coins).toBe(2);
+    expect(state.hands[0].length).toBe(2);
     expect(state.hands[0][0]).toStrictEqual({ card: 'Duke', flipped: false, replacing: false });
-    expect(state.hands[0][1]).toStrictEqual({ card: 'Ambassador', flipped: false, replacing: true });
+    expect(state.hands[0][1]).toStrictEqual({ card: 'Ambassador', flipped: false, replacing: false });
   });
 });
 
