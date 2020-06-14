@@ -90,9 +90,9 @@ export function HostScreen(props: HostScreenProps) {
           {`${getStateInfo(state).curTurnName}'s turn`}
         </Typography>
       )}
-      {state.actionList.map((action) => (
-        <Typography variant="h5" gutterBottom align="center">
-          {getLastActionText(action, state)}
+      {state.actionList.map((action, actionIdx) => (
+        <Typography variant="h5" gutterBottom align="center" key={actionIdx}>
+          {actionToText(action, state)}
         </Typography>
       ))}
 
@@ -101,8 +101,9 @@ export function HostScreen(props: HostScreenProps) {
         {resolvedState.players.map((player, playerIdx) => {
           const { deltaCoins } = player;
           const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${deltaCoins}`);
+          const deltaCoinsFontColor = deltaCoins && deltaCoins > 0 ? 'green' : 'red';
           return (
-            <Grid item xs={3} className={player.eliminated && classes.eliminated}>
+            <Grid item xs={3} className={player.eliminated && classes.eliminated} key={playerIdx}>
               <Paper className={classes.paper}>
                 <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
                   <Avatar alt={player.nickname} src="/" />
@@ -111,15 +112,15 @@ export function HostScreen(props: HostScreenProps) {
                   <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
                     <img src="coin.png" className={classes.coin}></img>
                     <Typography>
-                      {player.coins} {deltaCoinsStr || ''}
+                      {player.coins} <span style={{ color: deltaCoinsFontColor }}>{deltaCoinsStr || ''}</span>
                     </Typography>
                   </Box>
                 </Box>
                 <Grid container>
-                  {resolvedState.hands[player.index].slice(0, 2).map((card) => {
+                  {resolvedState.hands[player.index].slice(0, 2).map((card, cardIdx) => {
                     const cardUrl = card.flipped || card.replacing ? `/${card.card}.png` : '/card-back.png';
                     return (
-                      <Grid item xs={6}>
+                      <Grid item xs={6} key={cardIdx}>
                         <img src={cardUrl} className={classes.card} alt={card.card} />
                       </Grid>
                     );
