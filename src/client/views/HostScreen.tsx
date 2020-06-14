@@ -96,9 +96,9 @@ export function HostScreen(props: HostScreenProps) {
 
       <Box mt={2} />
       <Grid container spacing={3} justify="center">
-        {resolvedState.players.map((player, playerIdx) => {
+        {state.players.map((player, playerIdx) => {
           const { deltaCoins } = player;
-          const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${deltaCoins}`);
+          const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${-deltaCoins}`);
           const deltaCoinsFontColor = deltaCoins && deltaCoins > 0 ? 'green' : 'red';
           return (
             <Grid item xs={3} className={player.eliminated && classes.eliminated} key={playerIdx}>

@@ -21,9 +21,12 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
   const playerName = state.players[player].nickname;
   const hasChooseActions = isHost ? false : Boolean(state.actions[me.index].chooseActions);
   const playerIsOrYouAre = !isHost && state.players[player].id === me.id ? `You are` : `${playerName} is`;
-  const targetName = (targetIdx: number) => {
+  const targetName = (targetIdx: number, capitalise: boolean = false) => {
     const targetPlayer = state.players[targetIdx];
-    return !isHost && targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
+    if (!isHost && targetPlayer.id === me.id) {
+      return capitalise ? 'You' : 'you';
+    }
+    return targetPlayer.nickname;
   };
   const aOrAn = (thing: string) => (/^[aeiou]/.test(thing.toLowerCase()) ? `an ${thing}` : `a ${thing}`);
 
@@ -53,7 +56,7 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
       return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Revealing Influence':
       if (hasChooseActions) return 'Choose a card to reveal';
-      return `${targetName(player)} must reveal an influence!`;
+      return `${targetName(player, true)} must reveal an influence!`;
     case 'Resolved Action':
     case 'Resolving':
       return 'End of turn';
@@ -61,15 +64,19 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
       return isMyTurn ? 'You win!' : `${targetName(player)} wins!`;
     case 'Choose':
       if (action.reason === 'Exchange')
-        return `${targetName(player)} exchanged ${action.cards.length} cards with the court deck`;
+        return `${targetName(player, true)} exchanged ${action.cards.length} cards with the court deck`;
       if (action.reason === 'Assassination')
-        return `${targetName(player)} was assassinated and revealed  ${aOrAn(action.cards[0])}`;
+        return `${targetName(player, true)} was assassinated and revealed  ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Coup')
         return `The coup against ${targetName(player)} succeeded, revealing  ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Failed Bluff')
-        return `${targetName(player)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
-      if (action.reason === 'Failed Challenge')
-        return `${targetName(player)} revealed ${action.cards[0]} due to an incorrect challenge`;
+        return `${targetName(player, true)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
+      if (action.reason === 'Failed Challenge') {
+        const prevAction = state.actionList[state.actionList.length - 2];
+        return `${targetName(player, true)} revealed ${aOrAn(action.cards[0])}, the challenge fails and ${targetName(
+          prevAction.player
+        )} must now reveal an influence`;
+      }
 
       // Fallback?? Shouldn't hit this?
       return `${targetName(player)} revealed ${aOrAn(action.cards[0])}`;
