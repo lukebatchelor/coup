@@ -13,6 +13,8 @@ declare type PlayerLoadedGameMessage = { roomCode: string };
 declare type RoomCreatedMessage = { roomCode: string };
 declare type RoomStatusMessage = { roomCode: string; players: Array<User> };
 declare type PlayerActionMessage = { action: Action };
+declare type RestartGameMessage = {};
+declare type ExitGameMessage = {};
 declare type GameStateMessage = { roomCode: string; players: Array<User>; gameState: GameState; hostId: string };
 
 declare type SocketEvents = {
@@ -30,4 +32,6 @@ declare type SocketEvents = {
   'game-state': GameStateMessage;
   'resolve-action': never;
   'player-action': PlayerActionMessage;
+  'restart-game': RestartGameMessage;
+  'exit-game': ExitGameMessage;
 };

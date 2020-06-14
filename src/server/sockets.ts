@@ -48,7 +48,7 @@ export function configureSockets(appServer: http.Server) {
     safeOn('player-action', playerAction);
     safeOn('resolve-action', resolveAction);
     // safeOn('next-game-over-step', nextGameOverStep);
-    // safeOn('restart-game', restartGame);
+    safeOn('restart-game', restartGame);
     // safeOn('request-game-state', requestGameState);
 
     async function handshake({ id }: HandshakeMessage) {
@@ -170,6 +170,28 @@ export function configureSockets(appServer: http.Server) {
     }
 
     async function resolveAction() {
+      console.log(`${client.playerId} trying to resolve action on top of stack`);
+      const user = await getUser(client.playerId);
+      const usersInRoom = await getUsersInRoom(user.roomCode);
+      const hostId = usersInRoom.filter((p) => p.host)[0].id;
+      const room = await getRoom(user.roomCode);
+      const coup = new Coup([]);
+      coup.loadJson(room.gameState);
+      coup.resolve();
+      await setGameStateForRoom(user.roomCode, coup.dumpJson());
+
+      const { actionStack, actions, players, hands, currTurn, actionList, waitingOnPlayers }: GameState = coup.state;
+      const gameState = { actionStack, actions, players, currTurn, hands, actionList, waitingOnPlayers };
+
+      safeRoomEmit(user.roomCode, 'game-state', {
+        roomCode: user.roomCode,
+        players: usersInRoom,
+        gameState,
+        hostId,
+      });
+    }
+
+    async function restartGame() {
       console.log(`${client.playerId} trying to resolve action on top of stack`);
       const user = await getUser(client.playerId);
       const usersInRoom = await getUsersInRoom(user.roomCode);
