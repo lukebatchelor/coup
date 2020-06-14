@@ -65,11 +65,25 @@ export default class Coup {
 
     if (action.type !== 'Choose') {
       this.state.actionPlayed = true;
-      if (action.type !== 'Pass') {
-        this.state.actionStack.push({ player, action } as PlayerAction);
-      }
-      if (action.type === 'Block') {
-        this.state.challengeUsable = false;
+      switch (action.type) {
+        case 'Pass':
+          this.state.waitingOnPlayers = this.state.waitingOnPlayers.filter((i) => i !== player);
+          if (this.state.waitingOnPlayers.length === 0) {
+            this.resolve();
+            return;
+          }
+          break;
+        case 'Block':
+          this.state.challengeUsable = false;
+          this.state.actionStack.push({ player, action } as PlayerAction);
+          break;
+        case 'Challenge':
+          this.state.waitingOnPlayers = [];
+          this.state.actionStack.push({ player, action } as PlayerAction);
+          break;
+        default:
+          this.state.actionStack.push({ player, action } as PlayerAction);
+          break;
       }
     } else {
       const lastAction = this.state.actionStack.pop();

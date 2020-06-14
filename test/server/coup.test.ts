@@ -811,5 +811,14 @@ describe('Challenging', () => {
 });
 
 // describe('Passing', () => {
+//   it('should remove challenge action if someone passes', () => {
+//     const players = [
+//       { index: 0, coins: 2, deltaCoins: 0, nickname: 'jbatch', id: '1', eliminated: false },
+//       { index: 1, coins: 2, deltaCoins: 0, nickname: 'lbatch', id: '2', eliminated: false },
+//       { index: 2, coins: 2, deltaCoins: 0, nickname: 'guy', id: '3', eliminated: false },
+//     ];
+//     game = getGameWithState({ players });
 
+//     doAction(0, assassinate(1));
+//   });
 // });
