@@ -1,8 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box, Button } from '@material-ui/core';
 import { getStateInfo } from './PlayingScreen/types';
-import { SocketContext, PlayerContext } from '../contexts';
+import { SocketContext, PlayerContext, CurViewContext } from '../contexts';
 import { actionToText } from './PlayingScreen/Actions';
+import { Views } from './Views';
 
 const NO_ACTION_TIMEOUT_MS = 10000;
 const RESOLUTION_PAUSE_MS = 3000;
@@ -42,6 +43,7 @@ type HostScreenProps = {};
 export function HostScreen(props: HostScreenProps) {
   const classes = useStyles();
   const socket = useContext(SocketContext);
+  const [curView, setCurView] = useContext(CurViewContext);
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
   const [state, setState] = useState<GameState>(null);
   const [resolutionCount, setResolutionCount] = useState<number>(0);
@@ -80,6 +82,13 @@ export function HostScreen(props: HostScreenProps) {
   if (!state) return <div>Loading...</div>;
 
   const debugResolveText = `Resolution action: ${resolutionCount}/???`;
+  const exitClicked = () => {
+    socket.emit('exit-game');
+    setCurView(Views.StartScreen);
+  };
+  const playAgainClicked = () => {
+    socket.emit('restart-game');
+  };
 
   return (
     <Container maxWidth="lg">
@@ -129,6 +138,21 @@ export function HostScreen(props: HostScreenProps) {
           );
         })}
       </Grid>
+      <Box mt={4} />
+      {state.actionList.length === 1 && state.actionList[0].action.type === 'Declare Winner' && (
+        <Grid container justify="center" spacing={4}>
+          <Grid item>
+            <Button variant="contained" onClick={exitClicked}>
+              Exit
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" color="primary" onClick={playAgainClicked}>
+              Play Again
+            </Button>
+          </Grid>
+        </Grid>
+      )}
       <Button
         type="button"
         variant="contained"
