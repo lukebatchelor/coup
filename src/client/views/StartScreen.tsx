@@ -36,30 +36,21 @@ export function StartScreen(props: StartScreenProps) {
     <Container maxWidth="md">
       <Paper className={classes.paper}>
         <Typography paragraph>
-          In the not too distant future, the government is run for profit by a new "royal class" of multinational CEOs.
-        </Typography>
-
-        <Typography paragraph>
-          Their greed and absolute control of the economy has reduced all but a privileged few to lives of poverty and
+          In a future where the government is run for profit, all but a privledged few live lives of poverty and
           desperation.
         </Typography>
-
         <Typography paragraph>
-          Out of the oppressed masses rose The Resistance, an underground organization focused on overthrowing these
-          powerful rulers. The valiant efforts of
+          Out of these opressed masses are sown the seeds of a rebellion that throws the government into chaos.
         </Typography>
 
         <Typography paragraph>
-          The Resistance have created discord, intrigue, and weakness in the political courts of the noveau royal,
-          bringing the government to brink of collapse. But for you, a powerful government official, this is your
-          opportunity to manipulate, bribe and bluff your way into absolute power.
+          Many see hope for a brighter future for the first time in their lives. Others see opportunity for absolute
+          power.
         </Typography>
 
         <Typography paragraph>
-          To be successful, you must destroy the influence of your rivals and drive them into exile.
+          To take command, you must destroy the influence of your rivals and drive them into exile.
         </Typography>
-
-        <Typography paragraph>In these turbulent times there is only room for one to survive.</Typography>
 
         <Typography>See the instructions for more information on how to play the game</Typography>
       </Paper>

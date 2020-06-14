@@ -212,14 +212,12 @@ export default class Coup {
       }
       case 'Gain Coins': {
         const { gainingPlayer, coins } = action;
-        this.state.players[gainingPlayer].coins += coins;
         this.state.players[gainingPlayer].deltaCoins = coins;
         break;
       }
       case 'Lose Coins': {
         const { losingPlayer, coins } = action;
-        this.state.players[losingPlayer].coins -= coins;
-        this.state.players[losingPlayer].deltaCoins = coins;
+        this.state.players[losingPlayer].deltaCoins = -coins;
         break;
       }
       default:
@@ -243,6 +241,7 @@ export default class Coup {
           this.state.hands[i].push({ card, flipped: false, replacing: false });
           this.state.deck = shuffle([...this.state.deck]);
         }
+        this.state.players[i].coins += this.state.players[i].deltaCoins;
         this.state.players[i].deltaCoins = 0;
       }
       this.updateCurrTurn();
@@ -436,7 +435,9 @@ export default class Coup {
     if (playerIndex !== actionOnStack.player) {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
-    const cards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
+    const cards = this.state.hands[playerIndex]
+      .filter((card) => !card.flipped && !card.replacing)
+      .map((card) => card.card);
     const cardCombinations = uniqueCombinations(cards);
     const actions = cardCombinations.map((cards) => ({
       type: 'Choose',
