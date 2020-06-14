@@ -7,6 +7,7 @@ import { StartScreen, InstructionsScreen, JoinGameScreen, LobbyScreen, PlayingSc
 import { Views } from './views/Views';
 
 import { CurViewContext, SocketContext, PlayerContext } from './contexts';
+import { ConfirmDialog } from './components/ConfirmDialog';
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -22,14 +23,22 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function shouldShowHomeButton(curView: Views) {
-  return [].includes(curView);
+  return [Views.InstructionsScreen, Views.JoinGame, Views.Lobby, Views.PlayingScreen].includes(curView);
 }
 
 export function App() {
   const classes = useStyles();
   const [curView, setCurView] = useContext(CurViewContext);
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
+  const [confirmLeaveGameOpen, setConfirmLeaveGameOpen] = useState<boolean>(false);
+
   const socket = useContext(SocketContext);
+  const closeConfirmLeaveGameDialog = () => setConfirmLeaveGameOpen(false);
+  const openConfirmLeaveGameDialog = () => setConfirmLeaveGameOpen(true);
+  const onConfimLeaveGame = () => {
+    closeConfirmLeaveGameDialog();
+    leaveGame();
+  };
 
   useEffect(() => {
     if (socket.initialised) {
@@ -45,13 +54,29 @@ export function App() {
     }
   }, [socket]);
 
+  function onHomeButtonClicked() {
+    switch (curView) {
+      case Views.Lobby:
+      case Views.PlayingScreen:
+        openConfirmLeaveGameDialog();
+        break;
+      case Views.JoinGame:
+      case Views.InstructionsScreen:
+        setCurView(Views.StartScreen);
+    }
+  }
+  function leaveGame() {
+    closeConfirmLeaveGameDialog();
+    socket.emit('player-leave-room', { roomCode: playerInfo.roomCode });
+    setCurView(Views.StartScreen);
+  }
   return (
     <div className={classes.appConainer}>
       <CssBaseline />
       <AppBar position="fixed">
         <Toolbar>
           {shouldShowHomeButton(curView) && (
-            <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={() => {}}>
+            <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={onHomeButtonClicked}>
               <HomeIcon />
             </IconButton>
           )}
@@ -70,6 +95,9 @@ export function App() {
         {curView === Views.PlayingScreen && !playerInfo.isHost && <PlayingScreen />}
         {curView === Views.PlayingScreen && playerInfo.isHost && <HostScreen />}
       </main>
+      <ConfirmDialog onClose={closeConfirmLeaveGameDialog} onConfirm={onConfimLeaveGame} open={confirmLeaveGameOpen}>
+        Are you sure you want to leave the current game?
+      </ConfirmDialog>
     </div>
   );
 }
