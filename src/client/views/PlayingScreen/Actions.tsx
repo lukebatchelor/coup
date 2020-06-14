@@ -10,66 +10,69 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-// List of actions that require targets (require two steps in performing the action)
-type ActionWithTarget = 'Coup' | 'Assassinate' | 'Steal';
-const actionsWithTargets: Array<ActionWithTarget> = ['Coup', 'Assassinate', 'Steal'];
-type Target = { index: number; nickname: string };
+export function actionToText(playerAction: PlayerAction, state: GameState) {
+  const { isHost, me, isMyTurn, curTurnName, lastAction } = getStateInfo(state);
 
-function lastActionToInfoText(state: GameState) {
-  const { lastAction, me, isMyTurn, curTurnName } = getStateInfo(state);
-  const nameOrYou = (targetIdx: number) => {
-    const targetPlayer = state.players[targetIdx];
-    return targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
-  };
-
-  if (!lastAction) {
-    return isMyTurn ? "It's your turn!" : `Waiting for player ${curTurnName}`;
+  if (!playerAction) {
+    return !isHost && isMyTurn ? "It's your turn!" : `Waiting for ${curTurnName} to choose an action`;
   }
 
-  const { action, player } = lastAction;
+  const { action, player } = playerAction;
   const playerName = state.players[player].nickname;
-  const hasChooseActions = !!state.actions[me.index].chooseActions;
+  const hasChooseActions = isHost ? false : Boolean(state.actions[me.index].chooseActions);
+  const playerIsOrYouAre = !isHost && state.players[player].id === me.id ? `You are` : `${playerName} is`;
+  const targetName = (targetIdx: number) => {
+    const targetPlayer = state.players[targetIdx];
+    return !isHost && targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
+  };
+  const aOrAn = (thing: string) => (/^[aeiou]/.test(thing.toLowerCase()) ? `an ${thing}` : `a ${thing}`);
 
-  const playerIsOrYouAre = state.players[player].id === me.id ? `You are` : `${playerName} is`;
   switch (action.type) {
     case 'Income':
       return `${playerIsOrYouAre} collecting income (+1 coin)`;
     case 'Foreign Aid':
       return `${playerIsOrYouAre} collecting foreign aid (+2 coins)`;
     case 'Coup':
-      return `${playerIsOrYouAre} paying 7 coins  to stage a coup against ${nameOrYou(action.target)}`;
+      return `${playerIsOrYouAre} paying 7 coins to stage a coup against ${targetName(action.target)}`;
     case 'Tax':
       return `${playerIsOrYouAre} collecting tax as the Duke (+3 coins)`;
     case 'Assassinate':
-      return `${playerIsOrYouAre} paying 3 coins to assasinate ${nameOrYou(action.target)}`;
+      return `${playerIsOrYouAre} paying 3 coins to assasinate ${targetName(action.target)}`;
     case 'Exchange':
       return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Steal':
-      return `${playerIsOrYouAre} stealing coins from ${nameOrYou(action.target)}`;
+      return `${playerIsOrYouAre} stealing coins from ${targetName(action.target)}`;
     case 'Challenge':
       if (hasChooseActions)
-        return `${playerIsOrYouAre} challenging your action. Choose a card to either prove your claim or to discard for bluffing!`;
+        return `${playerIsOrYouAre} wants to call your bluff. Choose a card to either prove your claim or to discard for bluffing!`;
       return `${playerIsOrYouAre} challenging the action!`;
     case 'Block':
-      return `${playerIsOrYouAre} blocking the action using a ${action.card}`;
+      return `${playerIsOrYouAre} blocking the action using  ${aOrAn(action.card)}`;
     case 'Exchanging Influence':
       if (isMyTurn) return 'Select two cards to put back in the deck';
       return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Revealing Influence':
       if (hasChooseActions) return 'Choose a card to reveal';
-      return `${nameOrYou(player)} must reveal a card!`;
+      return `${targetName(player)} must reveal an influence!`;
     case 'Resolved Action':
+    case 'Resolving':
       return 'End of turn';
+    case 'Declare Winner':
+      return isMyTurn ? 'You win!' : `${targetName(player)} wins!`;
     case 'Choose':
-      if (action.reason === 'Exchange') return `${playerName} exchanged ${action.cards.length} cards`;
-      if (action.reason === 'Assassination') return `${playerName} revealed ${action.cards[0]} for assasination`;
-      if (action.reason === 'Coup') return `${playerName} revealed ${action.cards[0]} for coup`;
-      if (action.reason === 'Failed Bluff') return `${playerName} revealed ${action.cards[0]} for failed bluff`;
+      if (action.reason === 'Exchange')
+        return `${targetName(player)} exchanged ${action.cards.length} cards with the court deck`;
+      if (action.reason === 'Assassination')
+        return `${targetName(player)} was assassinated and revealed  ${aOrAn(action.cards[0])}`;
+      if (action.reason === 'Coup')
+        return `The coup against ${targetName(player)} succeeded, revealing  ${aOrAn(action.cards[0])}`;
+      if (action.reason === 'Failed Bluff')
+        return `${targetName(player)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Failed Challenge')
-        return `${playerName} revealed ${action.cards[0]} due to a incorrect challenge`;
+        return `${targetName(player)} revealed ${action.cards[0]} due to an incorrect challenge`;
 
-      // Fallback?? Shouldn't hit?
-      return `${playerName} revealed a ${action.cards[0]}`;
+      // Fallback?? Shouldn't hit this?
+      return `${targetName(player)} revealed ${aOrAn(action.cards[0])}`;
   }
 }
 
@@ -136,7 +139,7 @@ export function Actions(props: ActionsProps) {
     <>
       <Paper>
         <Box p={2} mt={2}>
-          <Typography>{lastActionToInfoText(state)}</Typography>
+          <Typography>{actionToText(lastAction, state)}</Typography>
         </Box>
       </Paper>
       <Box mt={4}>

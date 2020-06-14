@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box, Button } from '@material-ui/core';
 import { getStateInfo } from './PlayingScreen/types';
 import { SocketContext, PlayerContext } from '../contexts';
+import { actionToText } from './PlayingScreen/Actions';
 
 const NO_ACTION_TIMEOUT_MS = 10000;
 const RESOLUTION_PAUSE_MS = 3000;
@@ -24,78 +25,12 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function getLastActionText(playerAction: PlayerAction, state: GameState) {
-  const { lastAction, curTurnName } = getStateInfo(state);
-  if (state.actionStack.length === 0) {
-    return `${curTurnName}'s Turn`;
-  }
-  const { action, player } = playerAction;
-  const playerName = state.players[player].nickname;
-  const idxToName = (idx: number) => state.players[idx].nickname;
-
-  switch (action.type) {
-    case 'Income':
-      return `${playerName} is collecting income (+1 coin)`;
-    case 'Foreign Aid':
-      return `${playerName} is collecting foreign aid (+2 coins)`;
-    case 'Coup':
-      return `${playerName} is paying 7 coins  to stage a coup against ${idxToName(action.target)}`;
-    case 'Tax':
-      return `${playerName} is collecting tax as the Duke (+3 coins)`;
-    case 'Assassinate':
-      return `${playerName} is paying 3 coins to assasinate ${idxToName(action.target)}`;
-    case 'Exchange':
-      return `${playerName} is exchanging cards with the deck`;
-    case 'Steal':
-      return `${playerName} is stealing coins from ${idxToName(action.target)}`;
-    case 'Challenge':
-      return `${playerName} is challenging the action!`;
-    case 'Block':
-      return `${playerName} is blocking the action using a ${action.card}`;
-    case 'Exchanging Influence':
-      return `${playerName} is exchanging cards with the deck`;
-    case 'Choose':
-      if (action.reason === 'Exchange') return `${playerName} exchanged ${action.cards.length} cards`;
-      if (action.reason === 'Assassination') return `${playerName} revealed ${action.cards[0]} for assasination`;
-      if (action.reason === 'Coup') return `${playerName} revealed ${action.cards[0]} for coup`;
-      if (action.reason === 'Failed Bluff') return `${playerName} failed the challenge and revealed ${action.cards[0]}`;
-      if (action.reason === 'Failed Challenge')
-        return `${playerName} revealed ${action.cards[0]} to beat the challenge`;
-      // Fallback?? Shouldn't hit?
-      return `${playerName} revealed a ${action.cards[0]}`;
-    case 'Revealing Influence':
-      return `${playerName} must reveal a card!`;
-    case 'Resolving':
-      return 'End of round...';
-    case 'Declare Winner':
-      return `${playerName} wins!`;
-  }
-}
-
 function getResolvedState(state: GameState, resolutionCount: number) {
   if (state.actionStack.length !== 1 || state.actionStack[0].action.type !== 'Resolving') {
     return state;
   }
   // create copy of state to modify
   const resolvedState: GameState = JSON.parse(JSON.stringify(state));
-  const { actionList } = state;
-  // for (let i = 0; i < resolutionCount; i++) {
-  //   const action = resolutionActions[i];
-  //   if (action.type === 'Flip') {
-  //     resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
-  //   } else if (action.type === 'Discard') {
-  //     resolvedState.hands[action.player].find((card) => card.card === action.card).flipped = true;
-  //   } else if (action.type === 'Draw') {
-  //     const prevAction = resolutionActions[i - 1];
-  //     if (prevAction.type === 'Discard') {
-  //       resolvedState.hands[prevAction.player].find((card) => card.card === prevAction.card).flipped = false;
-  //     }
-  //   } else if (action.type === 'Gain Coins') {
-  //     resolvedState.players[action.gainingPlayer].coins += action.coins;
-  //   } else if (action.type === 'Lose Coins') {
-  //     resolvedState.players[action.losingPlayer].coins -= action.coins;
-  //   }
-  // }
 
   return resolvedState;
 }
@@ -163,7 +98,7 @@ export function HostScreen(props: HostScreenProps) {
 
       <Box mt={2} />
       <Grid container spacing={3} justify="center">
-        {resolvedState.players.map((player) => {
+        {resolvedState.players.map((player, playerIdx) => {
           const { deltaCoins } = player;
           const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${deltaCoins}`);
           return (
