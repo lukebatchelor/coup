@@ -54,7 +54,7 @@ declare type BlockAction = { type: 'Block'; card: Card };
 // Other actions that can be on the stack but are not put there by players.
 declare type RevealingInfluence = {
   type: 'Revealing Influence';
-  reason: 'Failed Bluff' | 'Failed Challenge' | 'Succeeded Challenge' | 'Assisination' | 'Coup';
+  reason: 'Failed Bluff' | 'Failed Challenge' | 'Assassination' | 'Coup';
 };
 declare type Exchanging = { type: 'Exchanging Influence' };
 declare type Resolving = { type: 'Resolving' };
@@ -62,13 +62,7 @@ declare type DeclareWinner = { type: 'Declare Winner' };
 declare type ResolvedAction = { type: 'Resolved Action'; action: PlayerAction };
 declare type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner | ResolvedAction;
 
-declare type ChooseReason =
-  | 'Exchange'
-  | 'Failed Bluff'
-  | 'Failed Challenge'
-  | 'Succeeded Challenge'
-  | 'Assisination'
-  | 'Coup';
+declare type ChooseReason = 'Exchange' | 'Failed Bluff' | 'Failed Challenge' | 'Assassination' | 'Coup';
 // ChooseAction - used after assassinate/coup/challenge/exchange
 declare type ChooseAction = { type: 'Choose'; cards: Array<Card>; reason: ChooseReason };
 

@@ -62,7 +62,7 @@ function lastActionToInfoText(state: GameState) {
       return 'End of turn';
     case 'Choose':
       if (action.reason === 'Exchange') return `${playerName} exchanged ${action.cards.length} cards`;
-      if (action.reason === 'Assisination') return `${playerName} revealed ${action.cards[0]} for assasination`;
+      if (action.reason === 'Assassination') return `${playerName} revealed ${action.cards[0]} for assasination`;
       if (action.reason === 'Coup') return `${playerName} revealed ${action.cards[0]} for coup`;
       if (action.reason === 'Failed Bluff') return `${playerName} revealed ${action.cards[0]} for failed bluff`;
       if (action.reason === 'Failed Challenge')

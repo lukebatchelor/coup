@@ -111,7 +111,7 @@ export default class Coup {
       this.executeResolutionAction({ type: 'Return', player, card: choose.cards[0] });
       this.state.actionStack.push({
         player: challenge.player,
-        action: { type: 'Revealing Influence', reason: 'Succeeded Challenge' },
+        action: { type: 'Revealing Influence', reason: 'Failed Challenge' },
       });
     } else {
       const failedAction = this.state.actionStack.pop();
@@ -272,7 +272,7 @@ export default class Coup {
         this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: player, coins: 3 });
         this.state.actionStack.push({
           player: action.target,
-          action: { type: 'Revealing Influence', reason: 'Assisination' },
+          action: { type: 'Revealing Influence', reason: 'Assassination' },
         });
         break;
       case 'Block':
