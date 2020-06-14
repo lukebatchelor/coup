@@ -77,7 +77,6 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
       onSelection([idx]);
       closeHandDrawer();
     }
-    console.log('idx', idx, 'selected', selected);
   };
   const handleOnClose = () => {
     // block closing drawer if we are selecting cards
@@ -106,7 +105,7 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
               });
               return (
                 <Box ml={1} mr={1} display="flex" alignItems="center" flexDirection="column" key={'cc' + i}>
-                  <img src="/card.png" className={className} alt="card" onClick={() => onClick(i)} />
+                  <img src={`/${card.card}.png`} className={className} alt={card.card} onClick={() => onClick(i)} />
                   <Typography align="center">{card.card}</Typography>
                 </Box>
               );

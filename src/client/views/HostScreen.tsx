@@ -182,7 +182,7 @@ export function HostScreen(props: HostScreenProps) {
                 </Box>
                 <Grid container>
                   {resolvedState.hands[player.index].slice(0, 2).map((card) => {
-                    const cardUrl = card.flipped || card.replacing ? '/card.png' : '/card-back.png';
+                    const cardUrl = card.flipped || card.replacing ? `/${card.card}.png` : '/card-back.png';
                     return (
                       <Grid item xs={6}>
                         <img src={cardUrl} className={classes.card} alt={card.card} />
