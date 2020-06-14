@@ -25,16 +25,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function getResolvedState(state: GameState, resolutionCount: number) {
-  if (state.actionStack.length !== 1 || state.actionStack[0].action.type !== 'Resolving') {
-    return state;
-  }
-  // create copy of state to modify
-  const resolvedState: GameState = JSON.parse(JSON.stringify(state));
-
-  return resolvedState;
-}
-
 function noPlayerMoves(state: GameState) {
   return state.actions.every((actions) => {
     const { characterActions, bluffActions, generalActions, chooseActions } = actions;
@@ -55,22 +45,29 @@ export function HostScreen(props: HostScreenProps) {
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
   const [state, setState] = useState<GameState>(null);
   const [resolutionCount, setResolutionCount] = useState<number>(0);
+  const [timer, setTimer] = useState(null);
 
   function resolveAction() {
     return socket.emit('resolve-action');
-    // if (resolutionCount === state.resolutionActions.length) {
-    // }
-    setResolutionCount(resolutionCount + 1);
   }
+
+  const resolveIfNoMoves = () => {
+    if (state && noPlayerMoves(state) && !timer) {
+      const timeout = setTimeout(() => {
+        resolveAction();
+        setTimer(null);
+      }, 3000);
+      setTimer(timeout);
+    }
+    if (!timer) {
+    }
+  };
 
   useEffect(() => {
     socket.on('game-state', ({ gameState }) => {
       console.log('game-state', { gameState });
       setState(gameState);
 
-      if (noPlayerMoves(gameState)) {
-        setTimeout(() => resolveAction, 3000);
-      }
       if (gameState.actionStack.length === 0) {
         setResolutionCount(0);
       }
@@ -78,9 +75,10 @@ export function HostScreen(props: HostScreenProps) {
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
   }, []);
 
+  useEffect(resolveIfNoMoves, [state]);
+
   if (!state) return <div>Loading...</div>;
 
-  const resolvedState = getResolvedState(state, resolutionCount);
   const debugResolveText = `Resolution action: ${resolutionCount}/???`;
 
   return (
@@ -117,7 +115,7 @@ export function HostScreen(props: HostScreenProps) {
                   </Box>
                 </Box>
                 <Grid container>
-                  {resolvedState.hands[player.index].slice(0, 2).map((card, cardIdx) => {
+                  {state.hands[player.index].slice(0, 2).map((card, cardIdx) => {
                     const cardUrl = card.flipped || card.replacing ? `/${card.card}.png` : '/card-back.png';
                     return (
                       <Grid item xs={6} key={cardIdx}>

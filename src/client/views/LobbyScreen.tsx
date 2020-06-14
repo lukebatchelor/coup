@@ -20,18 +20,15 @@ export function LobbyScreen(props: LobbyScreenProps) {
   const [players, setPlayers] = useState<Array<User>>([]);
 
   const { roomCode, nickName, isHost } = playerInfo;
-  console.log('lobby render');
 
   // Will only be called on first render
   useEffect(() => {
     const joinRoomData: PlayerJoinRoomMessage = { roomCode, nickName, host: isHost };
     socket.emit('player-join-room', joinRoomData);
     socket.on('room-status', ({ roomCode, players }) => {
-      console.log({ roomCode, players });
       setPlayers(players.filter((p) => !p.host));
     });
     socket.on('start-game', () => {
-      console.log('start-game');
       setPlayerInfo({ inGame: true });
       setCurView(Views.PlayingScreen);
     });
