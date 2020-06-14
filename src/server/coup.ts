@@ -60,7 +60,9 @@ export default class Coup {
       throw new Error('Invalid Action');
       return;
     }
-    this.state.actionList.push({ player, action });
+    if (action.type !== 'Pass') {
+      this.state.actionList.push({ player, action });
+    }
     if (action.type !== 'Choose') {
       this.state.actionPlayed = true;
       this.state.actionStack.push({ player, action } as PlayerAction);
