@@ -99,6 +99,10 @@ function challenge(): Action {
   return { type: 'Challenge' };
 }
 
+function pass(): Action {
+  return { type: 'Pass' };
+}
+
 function resolving(): Action {
   return { type: 'Resolving' };
 }
@@ -254,7 +258,7 @@ describe('No actions on stack', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     game.resolve();
@@ -275,7 +279,7 @@ describe('No actions on stack', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [block('Ambassador')],
       characterActions: [block('Captain')],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     game.resolve();
@@ -299,7 +303,7 @@ describe('No actions on stack', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [block('Contessa')],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     game.resolve();
@@ -371,7 +375,7 @@ describe('No actions on stack', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     game.resolve();
@@ -418,14 +422,14 @@ describe('Blocking', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [block('Contessa')],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     doAction(1, block('Contessa'));
     expect(state.actions[0]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
@@ -446,14 +450,14 @@ describe('Blocking', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [block('Contessa')],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     doAction(1, block('Contessa'));
     expect(state.actions[0]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
@@ -512,14 +516,14 @@ describe('Blocking', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [],
       characterActions: [block('Contessa')],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     doAction(1, block('Contessa'));
     expect(state.actions[0]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
     expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
@@ -571,7 +575,7 @@ describe('Challenging', () => {
     expect(state.actions[1]).toStrictEqual({
       bluffActions: [],
       characterActions: [],
-      generalActions: [challenge()],
+      generalActions: [challenge(), pass()],
     });
 
     doAction(1, challenge());
@@ -606,7 +610,7 @@ describe('Challenging', () => {
       expect(state.actions[1]).toStrictEqual({
         bluffActions: [block('Ambassador')],
         characterActions: [block('Captain')],
-        generalActions: [challenge()],
+        generalActions: [challenge(), pass()],
       });
 
       doAction(1, challenge());
@@ -677,7 +681,7 @@ describe('Challenging', () => {
       expect(state.actions[0]).toStrictEqual({
         bluffActions: [],
         characterActions: [],
-        generalActions: [challenge()],
+        generalActions: [challenge(), pass()],
       });
       expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
@@ -712,7 +716,7 @@ describe('Challenging', () => {
       expect(state.actions[0]).toStrictEqual({
         bluffActions: [],
         characterActions: [],
-        generalActions: [challenge()],
+        generalActions: [challenge(), pass()],
       });
       expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
@@ -783,7 +787,7 @@ describe('Challenging', () => {
       expect(state.actions[0]).toStrictEqual({
         bluffActions: [],
         characterActions: [],
-        generalActions: [challenge()],
+        generalActions: [challenge(), pass()],
       });
       expect(state.actions[1]).toStrictEqual(EMPTY_ACTION);
 
@@ -805,3 +809,7 @@ describe('Challenging', () => {
     });
   });
 });
+
+// describe('Passing', () => {
+
+// });

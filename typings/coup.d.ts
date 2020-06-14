@@ -21,6 +21,7 @@ declare type State = {
   actionStack: Array<PlayerAction>;
   actionList: Array<PlayerAction>;
   actions: Array<AvailableActions>;
+  waitingOnPlayers: Array<number>;
 };
 
 // Actions

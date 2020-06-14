@@ -36,6 +36,7 @@ export default class Coup {
       actionStack: [],
       actionList: [],
       actions: [],
+      waitingOnPlayers: [],
     };
     this.updateActions();
   }
@@ -77,6 +78,9 @@ export default class Coup {
       } else {
         assert(false, 'Unexpected lastAction on stack: ' + lastAction.action.type);
       }
+    }
+    if (this.isActionChallengable(action)) {
+      this.updateWaitingOnPlayers(player, action);
     }
     this.updateActions();
   }
@@ -126,6 +130,27 @@ export default class Coup {
       });
     }
     this.state.actions = this.getActions();
+  }
+
+  updateWaitingOnPlayers(player: number, action: Action): void {
+    const playersThatCanChallenge = this.state.players
+      .map((_, index) => {
+        if (this.state.players[index].eliminated) {
+          return;
+        }
+
+        if (player === index) {
+          return;
+        }
+
+        if (!this.state.challengeUsable && action.type !== 'Block') {
+          return;
+        }
+
+        return index;
+      })
+      .filter((i) => i !== undefined);
+    this.state.waitingOnPlayers = playersThatCanChallenge;
   }
 
   executeResolutionAction(action: ResolutionAction) {
@@ -370,8 +395,10 @@ export default class Coup {
     }
 
     const generalActions =
-      this.isActionChallengable(actionOnStack.action) && this.state.challengeUsable
-        ? ([{ type: 'Challenge' }] as Array<ChallengeAction>)
+      this.isActionChallengable(actionOnStack.action) &&
+      this.state.challengeUsable &&
+      this.state.waitingOnPlayers.includes(playerIndex)
+        ? ([{ type: 'Challenge' }, { type: 'Pass' }] as Array<ChallengeAction | PassAction>)
         : [];
 
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
@@ -409,8 +436,11 @@ export default class Coup {
     if (playerIndex === actionOnStack.player) {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
+    const generalActions = this.state.waitingOnPlayers.includes(playerIndex)
+      ? ([{ type: 'Challenge' }, { type: 'Pass' }] as Array<ChallengeAction | PassAction>)
+      : [];
     return {
-      generalActions: [{ type: 'Challenge' }],
+      generalActions,
       characterActions: [],
       bluffActions: [],
     };
@@ -580,8 +610,8 @@ export default class Coup {
       case 'Exchange':
       case 'Steal':
       case 'Tax':
-        return true;
       case 'Block':
+        return true;
       case 'Challenge':
       case 'Choose':
       case 'Coup':
