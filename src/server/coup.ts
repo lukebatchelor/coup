@@ -11,7 +11,7 @@ export default class Coup {
   constructor(playersList: Array<{ nickname: string; id: string }>) {
     const players = playersList.map(({ nickname, id }, index) => ({
       index,
-      coins: 2,
+      coins: 10,
       deltaCoins: 0,
       nickname,
       id,
@@ -275,6 +275,11 @@ export default class Coup {
         player: winner,
         action: { type: 'Declare Winner' },
       });
+      // Apply coin changes right away
+      for (let i = 0; i < this.state.players.length; i++) {
+        this.state.players[i].coins += this.state.players[i].deltaCoins;
+        this.state.players[i].deltaCoins = 0;
+      }
     }
   }
 
@@ -352,7 +357,7 @@ export default class Coup {
 
   getActions(): Array<AvailableActions> {
     return this.state.players.map((_, index) => {
-      if (this.state.players[index].eliminated) {
+      if (this.state.players[index].eliminated || this.isGameOver()) {
         return { generalActions: [], characterActions: [], bluffActions: [] };
       }
       if (this.state.actionStack.length === 0) {
@@ -695,6 +700,10 @@ export default class Coup {
       return uneliminatedPlayers[0].index;
     }
     return null;
+  }
+
+  isGameOver(): boolean {
+    return this.checkForWinner() !== null;
   }
 
   updateCurrTurn() {
