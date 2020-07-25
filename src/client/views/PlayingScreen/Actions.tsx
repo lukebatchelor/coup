@@ -149,7 +149,7 @@ export function Actions(props: ActionsProps) {
           <Typography>{actionToText(lastAction, state)}</Typography>
         </Box>
       </Paper>
-      <Box mt={4} mb={8}>
+      <Box mt={4} mb={10}>
         {generalActions && (
           <ActionGroup
             groupName="General Actions"
