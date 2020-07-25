@@ -61,7 +61,9 @@ export default class Coup {
       return;
     }
 
-    this.state.actionList.push({ player, action });
+    if (action.type !== 'Pass') {
+      this.state.actionList.push({ player, action });
+    }
 
     if (action.type !== 'Choose') {
       this.state.actionPlayed = true;
