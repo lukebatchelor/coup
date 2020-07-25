@@ -172,16 +172,8 @@ export default class Coup {
           return;
         }
 
-        const challengable = this.isActionChallengable(action);
         const blockable = this.isActionBlockable(action);
         if (!this.state.challengeUsable && action.type !== 'Block' && !blockable) {
-          return;
-        }
-
-        const usableCards = this.state.hands[player].filter((card) => !card.flipped).map((card) => card.card);
-        const hasRequiredCardToBlock = this.getAvailableBlockActionsForCards(action, usableCards).length > 0;
-        // Can't pass if the action needs to be blocks but player does not have the required cards
-        if (!challengable && blockable && !hasRequiredCardToBlock) {
           return;
         }
 
