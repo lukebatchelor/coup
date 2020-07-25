@@ -55,6 +55,8 @@ export function HostScreen(props: HostScreenProps) {
   const [state, setState] = useState<GameState>(null);
   const [resolutionCount, setResolutionCount] = useState<number>(0);
   const [timer, setTimer] = useState(null);
+  const urlParams = new URLSearchParams(window.location.search);
+  const showDebugButton = urlParams.has('debug');
 
   function resolveAction() {
     return socket.emit('resolve-action');
@@ -175,15 +177,17 @@ export function HostScreen(props: HostScreenProps) {
           </Grid>
         </Grid>
       )}
-      <Button
-        type="button"
-        variant="contained"
-        color="primary"
-        disabled={state.actionStack.length === 0}
-        onClick={resolveAction}
-      >
-        DEBUG_{debugResolveText}
-      </Button>
+      {showDebugButton && (
+        <Button
+          type="button"
+          variant="contained"
+          color="primary"
+          disabled={state.actionStack.length === 0}
+          onClick={resolveAction}
+        >
+          DEBUG_{debugResolveText}
+        </Button>
+      )}
     </Container>
   );
 }
