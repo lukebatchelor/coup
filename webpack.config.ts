@@ -3,6 +3,7 @@ import * as webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const pathPrefix = process.env.BASE_URL ? process.env.BASE_URL : '';
+const PROD = process.env.PROD;
 
 const config: webpack.Configuration = {
   context: path.resolve(__dirname, 'src/client'),
@@ -46,8 +47,13 @@ const config: webpack.Configuration = {
         };
       },
     }),
-    new webpack.EnvironmentPlugin({ BASE_URL: 'http://localhost:8000' }),
   ],
 };
+
+if (!PROD) {
+  config.plugins.push(new webpack.EnvironmentPlugin({ BASE_URL: 'http://localhost:8000' }));
+} else {
+  config.plugins.push(new webpack.EnvironmentPlugin({ BASE_URL: 'https://coup.jbat.ch' }));
+}
 
 export default config;
