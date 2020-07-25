@@ -71,6 +71,8 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
         return `The coup against ${targetName(player)} succeeded, revealing  ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Failed Bluff')
         return `${targetName(player, true)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
+      // if (action.reason === 'Beaten Challenge')
+      //   return `${targetName(player, true)} wasn't bluffing, they revealed ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Failed Challenge') {
         const prevAction = state.actionList[state.actionList.length - 2];
         return `${targetName(player, true)} revealed ${aOrAn(action.cards[0])}, the challenge fails and ${targetName(
