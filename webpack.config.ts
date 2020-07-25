@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import CopyPlugin from 'copy-webpack-plugin';
 
 const pathPrefix = process.env.BASE_URL ? process.env.BASE_URL : '';
 const PROD = process.env.PROD;
@@ -46,6 +47,9 @@ const config: webpack.Configuration = {
           pathPrefix,
         };
       },
+    }),
+    new CopyPlugin({
+      patterns: [{ from: 'public', to: 'assets' }],
     }),
   ],
 };
