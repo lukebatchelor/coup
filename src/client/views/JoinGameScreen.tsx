@@ -3,6 +3,7 @@ import { makeStyles, Container, TextField, Box, Button } from '@material-ui/core
 import { PlayerContext, CurViewContext } from '../contexts';
 
 import { Views } from './Views';
+import { getRoom } from '../api';
 
 const useStyles = makeStyles((theme) => ({}));
 
@@ -14,14 +15,27 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
 
   const [nickName, setNickName] = useState<string>('');
   const [roomCode, setRoomCode] = useState<string>(playerInfo.roomCode);
-  const onSubmit = (e: React.FormEvent) => {
+  const [helperText, setHelperText] = useState<string>('(four letter code given to you by your host)');
+  const [roomCodeError, setRoomCodeError] = useState<boolean>(false);
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPlayerInfo({ roomCode, nickName });
-    setCurView(Views.Lobby);
+    // Check the room exists
+    const maybeRoom = await getRoom(roomCode);
+    if (!maybeRoom.room) {
+      setHelperText('No room found with id: ' + roomCode);
+      setRoomCodeError(true);
+    } else {
+      setPlayerInfo({ roomCode, nickName });
+      setCurView(Views.Lobby);
+    }
   };
 
   const onNickNameChanged = (e: React.ChangeEvent<HTMLInputElement>) => setNickName(e.target.value);
-  const onRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => setRoomCode(e.target.value);
+  const onRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRoomCodeError(false);
+    setHelperText('(four letter code given to you by your host)');
+    setRoomCode(e.target.value);
+  };
   const disableRoomCodeInput = playerInfo.isHost;
 
   return (
@@ -36,7 +50,8 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
           value={roomCode}
           disabled={disableRoomCodeInput}
           onChange={onRoomCodeChange}
-          helperText="(four letter code given to you by your host)"
+          helperText={helperText}
+          error={roomCodeError}
         />
 
         <Box mt={3}>
