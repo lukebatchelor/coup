@@ -9,9 +9,12 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-type StartScreenProps = {};
+type StartScreenProps = {
+  showHelpMenu: () => void;
+};
 export function StartScreen(props: StartScreenProps) {
   const classes = useStyles();
+  const { showHelpMenu } = props;
   const [curView, setCurView] = useContext(CurViewContext);
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
   const socket = useContext(SocketContext);
@@ -29,7 +32,7 @@ export function StartScreen(props: StartScreenProps) {
     setCurView(Views.JoinGame);
   };
   const onInstructionsClick = () => {
-    setCurView(Views.InstructionsScreen);
+    showHelpMenu();
   };
 
   return (
