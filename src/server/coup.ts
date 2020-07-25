@@ -11,7 +11,7 @@ export default class Coup {
   constructor(playersList: Array<{ nickname: string; id: string }>) {
     const players = playersList.map(({ nickname, id }, index) => ({
       index,
-      coins: 10,
+      coins: 2,
       deltaCoins: 0,
       nickname,
       id,
