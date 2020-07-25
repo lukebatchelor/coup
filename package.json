@@ -12,6 +12,7 @@
     "dev": "concurrently --kill-others-on-fail 'yarn dev-server' 'yarn dev-client'",
     "dev-server": "ts-node-dev --watch 'src/server/**/*.ts' src/server/server.ts",
     "dev-client": "webpack-dev-server",
+    "deploy": "PROD=true yarn build && rsync -ah --progress dist jbatch@jbat.ch:/var/www/coup",
     "typecheck": "tsc --noEmit",
     "test": "jest"
   },
