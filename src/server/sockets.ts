@@ -129,7 +129,7 @@ export function configureSockets(appServer: http.Server) {
     async function playerLoadedGame() {
       const user = await getUser(client.playerId);
       const usersInRoom = await getUsersInRoom(user.roomCode);
-      const hostId = usersInRoom.filter((p) => p.host)[0].id;
+      const host = usersInRoom.filter((p) => p.host)[0];
       const room = await getRoom(user.roomCode);
       // Only send once to each client
       console.log('Sending game-state to' + JSON.stringify({ user, roomCode: user.roomCode }));
@@ -138,7 +138,12 @@ export function configureSockets(appServer: http.Server) {
 
       const { actionStack, actions, players, hands, currTurn, actionList, waitingOnPlayers }: GameState = coup.state;
       const gameState = { actionStack, actions, players, currTurn, hands, actionList, waitingOnPlayers };
-      safeEmit('game-state', { roomCode: user.roomCode, players: usersInRoom, gameState, hostId });
+      safeEmit('game-state', {
+        roomCode: user.roomCode,
+        players: usersInRoom,
+        gameState,
+        hostId: host ? host.id : null,
+      });
     }
 
     async function playerAction({ action }: PlayerActionMessage) {

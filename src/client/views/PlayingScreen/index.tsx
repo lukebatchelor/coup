@@ -14,11 +14,19 @@ export function PlayingScreen(props: PlayingScreenProps) {
   const socket = useContext(SocketContext);
   const [handOpen, setHandOpen] = useState<boolean>(false);
   const [state, setState] = useState<GameState>(null);
+  const [hostDisconnected, setHostDisconnected] = useState<boolean>(false);
 
   useEffect(() => {
-    socket.on('game-state', ({ gameState }) => {
+    socket.on('game-state', ({ gameState, hostId }) => {
       console.log('game-state', gameState);
       setState(gameState);
+      if (!hostId) {
+        setHostDisconnected(true);
+      }
+    });
+    socket.on('host-disconnected', () => {
+      console.log('host-disconnected');
+      setHostDisconnected(true);
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
   }, []);
@@ -55,6 +63,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
   };
   return (
     <Container maxWidth="md">
+      {hostDisconnected && <Typography>⚠️ Host has disconnected. Click 🏠 to return to the start screen</Typography>}
       <Actions state={state} />
       <ShowHandBar openHandDrawer={openHandDrawer} coins={me.coins} playerName={me.nickname} />
       <ShowHandDrawer

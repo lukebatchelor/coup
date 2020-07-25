@@ -14,8 +14,9 @@ declare type RoomCreatedMessage = { roomCode: string };
 declare type RoomStatusMessage = { roomCode: string; players: Array<User> };
 declare type PlayerActionMessage = { action: Action };
 declare type RestartGameMessage = {};
+declare type HostDisconnectedMessage = {};
 declare type ExitGameMessage = {};
-declare type GameStateMessage = { roomCode: string; players: Array<User>; gameState: GameState; hostId: string };
+declare type GameStateMessage = { roomCode: string; players: Array<User>; gameState: GameState; hostId?: string };
 
 declare type SocketEvents = {
   handshake: HandshakeMessage;
@@ -33,5 +34,6 @@ declare type SocketEvents = {
   'resolve-action': never;
   'player-action': PlayerActionMessage;
   'restart-game': RestartGameMessage;
+  'host-disconnected': HostDisconnectedMessage;
   'exit-game': ExitGameMessage;
 };
