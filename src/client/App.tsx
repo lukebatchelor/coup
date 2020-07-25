@@ -24,6 +24,26 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// function we can call to fetch all the images in the app to make sure they've
+// been fetched before trying to render them
+function preloadImages() {
+  const images = [
+    'Ambassador.png',
+    'Assassin.png',
+    'Captain.png',
+    'Contessa.png',
+    'Duke.png',
+    'card-back.png',
+    'cardsIcon.png',
+    'coin.png',
+  ];
+  images.forEach((img) => {
+    const tmp = new Image();
+    // No need to wait or add handlers, just load em
+    tmp.src = `assets/${img}`;
+  });
+}
+
 function shouldShowHomeButton(curView: Views) {
   return [Views.InstructionsScreen, Views.JoinGame, Views.Lobby, Views.PlayingScreen].includes(curView);
 }
@@ -45,6 +65,10 @@ export function App() {
     closeConfirmLeaveGameDialog();
     leaveGame();
   };
+
+  useEffect(() => {
+    preloadImages();
+  }, []);
 
   useEffect(() => {
     if (socket.initialised) {
