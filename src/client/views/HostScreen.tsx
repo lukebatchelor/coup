@@ -118,7 +118,7 @@ export function HostScreen(props: HostScreenProps) {
           const isWaitingOnPlayer = state.waitingOnPlayers.includes(player.index);
 
           return (
-            <Grid item xs={3} className={player.eliminated && classes.eliminated} key={playerIdx}>
+            <Grid item xs={3} className={clsx({ [classes.eliminated]: player.eliminated })} key={playerIdx}>
               <Paper
                 className={clsx(classes.paper, { [classes.seeThrough]: waitingOnAnyPlayer && !isWaitingOnPlayer })}
               >
