@@ -14,15 +14,30 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
   const [, setCurView] = useContext(CurViewContext);
 
   const [nickName, setNickName] = useState<string>('');
+  const [nickNameError, setNickNameError] = useState<string>('');
   const [roomCode, setRoomCode] = useState<string>(playerInfo.roomCode);
-  const [helperText, setHelperText] = useState<string>('(four letter code given to you by your host)');
+  const [roomCodeHelperText, setRoomCodeHelperText] = useState<string>('(four letter code given to you by your host)');
   const [roomCodeError, setRoomCodeError] = useState<boolean>(false);
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Check the room exists
+    if (nickName === '') {
+      setNickNameError('Nickname required');
+      return;
+    } else if (nickName.toLowerCase() === 'host') {
+      setNickNameError('Invalid nickname');
+      return;
+    }
+
+    if (roomCode === '') {
+      setRoomCodeHelperText('Room code required');
+      setRoomCodeError(true);
+      return;
+    }
+
+    // Check the room exists.
     const maybeRoom = await getRoom(roomCode);
     if (!maybeRoom.room) {
-      setHelperText('No room found with id: ' + roomCode);
+      setRoomCodeHelperText('No room found with id: ' + roomCode);
       setRoomCodeError(true);
     } else {
       setPlayerInfo({ roomCode, nickName });
@@ -30,10 +45,13 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
     }
   };
 
-  const onNickNameChanged = (e: React.ChangeEvent<HTMLInputElement>) => setNickName(e.target.value);
+  const onNickNameChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNickNameError('');
+    setNickName(e.target.value);
+  };
   const onRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomCodeError(false);
-    setHelperText('(four letter code given to you by your host)');
+    setRoomCodeHelperText('(four letter code given to you by your host)');
     setRoomCode(e.target.value);
   };
   const disableRoomCodeInput = playerInfo.isHost;
@@ -41,7 +59,15 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
   return (
     <Container maxWidth="sm">
       <form noValidate onSubmit={onSubmit}>
-        <TextField variant="outlined" fullWidth label="Nickname" value={nickName || ''} onChange={onNickNameChanged} />
+        <TextField
+          variant="outlined"
+          fullWidth
+          label="Nickname"
+          value={nickName || ''}
+          helperText={nickNameError}
+          error={!!nickNameError}
+          onChange={onNickNameChanged}
+        />
         <TextField
           variant="outlined"
           margin="normal"
@@ -50,7 +76,7 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
           value={roomCode || ''}
           disabled={disableRoomCodeInput}
           onChange={onRoomCodeChange}
-          helperText={helperText}
+          helperText={roomCodeHelperText}
           error={roomCodeError}
         />
 
