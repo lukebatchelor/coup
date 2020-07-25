@@ -41,13 +41,13 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
   return (
     <Container maxWidth="sm">
       <form noValidate onSubmit={onSubmit}>
-        <TextField variant="outlined" fullWidth label="Nickname" value={nickName} onChange={onNickNameChanged} />
+        <TextField variant="outlined" fullWidth label="Nickname" value={nickName || ''} onChange={onNickNameChanged} />
         <TextField
           variant="outlined"
           margin="normal"
           fullWidth
           label="Room Code"
-          value={roomCode}
+          value={roomCode || ''}
           disabled={disableRoomCodeInput}
           onChange={onRoomCodeChange}
           helperText={helperText}
