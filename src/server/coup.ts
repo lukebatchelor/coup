@@ -99,8 +99,17 @@ export default class Coup {
         assert(false, 'Unexpected lastAction on stack: ' + lastAction.action.type);
       }
     }
-    if (this.isActionChallengable(action) || this.isActionBlockable(action)) {
-      this.updateWaitingOnPlayers(player, action);
+
+    // if (this.isActionChallengable(action) || this.isActionBlockable(action)) {
+    //   this.updateWaitingOnPlayers(player, action);
+    // }
+    const actionOnTopOfStack = this.state.actionStack[this.state.actionStack.length - 1];
+    console.log('action on top of stack', JSON.stringify(actionOnTopOfStack));
+    if (
+      actionOnTopOfStack &&
+      (this.isActionChallengable(actionOnTopOfStack.action) || this.isActionBlockable(actionOnTopOfStack.action))
+    ) {
+      this.updateWaitingOnPlayers(actionOnTopOfStack.player, actionOnTopOfStack.action);
     }
     this.updateActions();
   }
@@ -163,14 +172,14 @@ export default class Coup {
           return;
         }
 
-        if (!this.state.challengeUsable && action.type !== 'Block') {
+        const challengable = this.isActionChallengable(action);
+        const blockable = this.isActionBlockable(action);
+        if (!this.state.challengeUsable && action.type !== 'Block' && !blockable) {
           return;
         }
 
-        const challengable = this.isActionChallengable(action);
-        const blockable = this.isActionBlockable(action);
         const usableCards = this.state.hands[player].filter((card) => !card.flipped).map((card) => card.card);
-        const hasRequiredCardToBlock = this.getAvailableBlockActionsForCards(action, usableCards);
+        const hasRequiredCardToBlock = this.getAvailableBlockActionsForCards(action, usableCards).length > 0;
         // Can't pass if the action needs to be blocks but player does not have the required cards
         if (!challengable && blockable && !hasRequiredCardToBlock) {
           return;
@@ -433,13 +442,6 @@ export default class Coup {
       }
     }
 
-    // const generalActions =
-    //   this.isActionChallengable(actionOnStack.action) &&
-    //   this.state.challengeUsable &&
-    //   this.state.waitingOnPlayers.includes(playerIndex)
-    //     ? ([{ type: 'Challenge' }, { type: 'Pass' }] as Array<ChallengeAction | PassAction>)
-    //     : [];
-
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
     const characterActions = this.getAvailableBlockActionsForCards(actionOnStack.action, usableCards).filter(
       isNotDupllicate
@@ -499,7 +501,7 @@ export default class Coup {
       .map((card) => ({
         type: 'Choose',
         cards: [card],
-        reason: card === requiredCard ? 'Failed Challenge' : 'Failed Bluff',
+        reason: card === requiredCard ? 'Beaten Challenge' : 'Failed Bluff',
       }))
       .filter(isNotDupllicate) as Array<ChooseAction>;
     const chooseActions = {

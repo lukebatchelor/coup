@@ -62,7 +62,13 @@ declare type DeclareWinner = { type: 'Declare Winner' };
 declare type ResolvedAction = { type: 'Resolved Action'; action: PlayerAction };
 declare type OtherAction = RevealingInfluence | Exchanging | Resolving | DeclareWinner | ResolvedAction;
 
-declare type ChooseReason = 'Exchange' | 'Failed Bluff' | 'Failed Challenge' | 'Assassination' | 'Coup';
+declare type ChooseReason =
+  | 'Exchange'
+  | 'Failed Bluff'
+  | 'Failed Challenge'
+  | 'Beaten Challenge'
+  | 'Assassination'
+  | 'Coup';
 // ChooseAction - used after assassinate/coup/challenge/exchange
 declare type ChooseAction = { type: 'Choose'; cards: Array<Card>; reason: ChooseReason };
 
