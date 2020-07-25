@@ -138,7 +138,7 @@ export function HostScreen(props: HostScreenProps) {
                     const cardUrl = card.flipped || card.replacing ? `assets/${card.card}.png` : 'assets/card-back.png';
                     return (
                       <Grid item xs={6} key={cardIdx}>
-                        <img src={cardUrl} className={classes.card} alt={card.card} />
+                        <img src={cardUrl} className={classes.card} alt="Card" />
                       </Grid>
                     );
                   })}
