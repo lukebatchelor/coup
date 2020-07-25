@@ -1,9 +1,7 @@
 import { StartScreen } from './StartScreen';
-import { InstructionsScreen } from './InstructionsScreen';
 import { JoinGameScreen } from './JoinGameScreen';
 import { LobbyScreen } from './LobbyScreen';
 import { PlayingScreen } from './PlayingScreen';
-import { GameOverScreen } from './GameOverScreen';
 import { HostScreen } from './HostScreen';
 
-export { StartScreen, InstructionsScreen, JoinGameScreen, LobbyScreen, PlayingScreen, GameOverScreen, HostScreen };
+export { StartScreen, JoinGameScreen, LobbyScreen, PlayingScreen, HostScreen };

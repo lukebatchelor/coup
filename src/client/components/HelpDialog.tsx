@@ -119,9 +119,9 @@ export function HelpDialog(props: HelpDialogProps) {
           <strong>Coup:</strong> Coup is a special action that cannot be blocked or challenged. If a player starts their
           turn with 10+ coins they must coup another player.
         </Typography>
-        <Box mb={2} />
+        <Box mb={4} />
         <hr />
-        <Box mb={2} />
+        <Box mb={4} />
         <Typography variant="h5">Character Cheet Sheet</Typography>
         <Table aria-label="Character Cheat Sheet">
           <TableHead>

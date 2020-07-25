@@ -4,7 +4,7 @@ import { CssBaseline, makeStyles, AppBar, Toolbar, IconButton, Box, Typography }
 import HomeIcon from '@material-ui/icons/Home';
 import HelpIcon from '@material-ui/icons/Help';
 
-import { StartScreen, InstructionsScreen, JoinGameScreen, LobbyScreen, PlayingScreen, HostScreen } from './views';
+import { StartScreen, JoinGameScreen, LobbyScreen, PlayingScreen, HostScreen } from './views';
 import { Views } from './views/Views';
 
 import { CurViewContext, SocketContext, PlayerContext } from './contexts';
@@ -130,7 +130,6 @@ export function App() {
       </AppBar>
       <main className={classes.main}>
         {curView === Views.StartScreen && <StartScreen showHelpMenu={openHelpDialog} />}
-        {curView === Views.InstructionsScreen && <InstructionsScreen />}
         {curView === Views.JoinGame && <JoinGameScreen />}
         {curView === Views.Lobby && <LobbyScreen />}
         {curView === Views.PlayingScreen && !playerInfo.isHost && <PlayingScreen />}
