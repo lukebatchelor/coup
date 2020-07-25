@@ -71,9 +71,6 @@ export function App() {
         setCurView(Views.StartScreen);
     }
   }
-  function onHelpButtonClicked() {
-    setHelpDialogOpen(true);
-  }
   function handleHelpDialogClose() {
     setHelpDialogOpen(false);
   }
@@ -101,7 +98,7 @@ export function App() {
             </Typography>
           </Box>
           {shouldShowHelpButton(curView) && (
-            <IconButton color="inherit" aria-label="help" edge="end" onClick={onHelpButtonClicked}>
+            <IconButton color="inherit" aria-label="help" edge="end" onClick={openHelpDialog}>
               <HelpIcon />
             </IconButton>
           )}
