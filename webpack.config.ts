@@ -14,6 +14,7 @@ const config: webpack.Configuration = {
   },
   devServer: {
     contentBase: path.resolve(__dirname, './src/client/public'),
+    contentBasePublicPath: '/assets',
     stats: 'errors-only',
     port: 8000,
     compress: true,

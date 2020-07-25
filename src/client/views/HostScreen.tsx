@@ -127,7 +127,7 @@ export function HostScreen(props: HostScreenProps) {
                   <Box ml={1} />
                   <Typography>{player.nickname}</Typography>
                   <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
-                    <img src="coin.png" className={classes.coin}></img>
+                    <img src="assets/coin.png" className={classes.coin}></img>
                     <Typography>
                       {player.coins} <span style={{ color: deltaCoinsFontColor }}>{deltaCoinsStr || ''}</span>
                     </Typography>
@@ -135,7 +135,7 @@ export function HostScreen(props: HostScreenProps) {
                 </Box>
                 <Grid container>
                   {state.hands[player.index].slice(0, 2).map((card, cardIdx) => {
-                    const cardUrl = card.flipped || card.replacing ? `/${card.card}.png` : '/card-back.png';
+                    const cardUrl = card.flipped || card.replacing ? `assets/${card.card}.png` : 'assets/card-back.png';
                     return (
                       <Grid item xs={6} key={cardIdx}>
                         <img src={cardUrl} className={classes.card} alt={card.card} />

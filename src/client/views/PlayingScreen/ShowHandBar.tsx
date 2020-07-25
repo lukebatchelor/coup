@@ -68,10 +68,10 @@ export function ShowHandBar(props: ShowHandBarProps) {
           <Toolbar style={{ width: '100%' }}>
             <Typography>{playerName || ''}</Typography>
             <Fab aria-label="Show hand" className={classes.fabButton} onClick={openHandDrawer}>
-              <img src="cardsIcon.png" alt="Show hand" className={classes.cardsIcon} />
+              <img src="assets/cardsIcon.png" alt="Show hand" className={classes.cardsIcon} />
             </Fab>
             <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
-              <img src="coin.png" className={classes.coin}></img>
+              <img src="assets/coin.png" className={classes.coin}></img>
               <Typography>{coins}</Typography>
             </Box>
           </Toolbar>
@@ -133,7 +133,12 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
               });
               return (
                 <Box ml={1} mr={1} display="flex" alignItems="center" flexDirection="column" key={'cc' + i}>
-                  <img src={`/${card.card}.png`} className={className} alt={card.card} onClick={() => onClick(i)} />
+                  <img
+                    src={`/assets/${card.card}.png`}
+                    className={className}
+                    alt={card.card}
+                    onClick={() => onClick(i)}
+                  />
                   <Typography align="center">{card.card}</Typography>
                 </Box>
               );
