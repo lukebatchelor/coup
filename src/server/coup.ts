@@ -97,7 +97,7 @@ export default class Coup {
         assert(false, 'Unexpected lastAction on stack: ' + lastAction.action.type);
       }
     }
-    if (this.isActionChallengable(action)) {
+    if (this.isActionChallengable(action) || this.isActionBlockable(action)) {
       this.updateWaitingOnPlayers(player, action);
     }
     this.updateActions();
@@ -151,7 +151,7 @@ export default class Coup {
   }
 
   updateWaitingOnPlayers(player: number, action: Action): void {
-    const playersThatCanChallenge = this.state.players
+    const playersThatCanPass = this.state.players
       .map((_, index) => {
         if (this.state.players[index].eliminated) {
           return;
@@ -165,10 +165,19 @@ export default class Coup {
           return;
         }
 
+        const challengable = this.isActionChallengable(action);
+        const blockable = this.isActionBlockable(action);
+        const usableCards = this.state.hands[player].filter((card) => !card.flipped).map((card) => card.card);
+        const hasRequiredCardToBlock = this.getAvailableBlockActionsForCards(action, usableCards);
+        // Can't pass if the action needs to be blocks but player does not have the required cards
+        if (!challengable && blockable && !hasRequiredCardToBlock) {
+          return;
+        }
+
         return index;
       })
       .filter((i) => i !== undefined);
-    this.state.waitingOnPlayers = playersThatCanChallenge;
+    this.state.waitingOnPlayers = playersThatCanPass;
   }
 
   executeResolutionAction(action: ResolutionAction) {
@@ -411,12 +420,23 @@ export default class Coup {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
-    const generalActions =
-      this.isActionChallengable(actionOnStack.action) &&
-      this.state.challengeUsable &&
-      this.state.waitingOnPlayers.includes(playerIndex)
-        ? ([{ type: 'Challenge' }, { type: 'Pass' }] as Array<ChallengeAction | PassAction>)
-        : [];
+    const challengable = this.isActionChallengable(actionOnStack.action);
+    const challengeUsable = this.state.challengeUsable;
+    const waitingOnPlayer = this.state.waitingOnPlayers.includes(playerIndex);
+    const generalActions: Array<ChallengeAction | PassAction> = [];
+    if (waitingOnPlayer) {
+      generalActions.push({ type: 'Pass' });
+      if (challengeUsable && challengable) {
+        generalActions.push({ type: 'Challenge' });
+      }
+    }
+
+    // const generalActions =
+    //   this.isActionChallengable(actionOnStack.action) &&
+    //   this.state.challengeUsable &&
+    //   this.state.waitingOnPlayers.includes(playerIndex)
+    //     ? ([{ type: 'Challenge' }, { type: 'Pass' }] as Array<ChallengeAction | PassAction>)
+    //     : [];
 
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
     const characterActions = this.getAvailableBlockActionsForCards(actionOnStack.action, usableCards).filter(
