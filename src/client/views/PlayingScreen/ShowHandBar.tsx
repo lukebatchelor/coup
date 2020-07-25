@@ -11,8 +11,11 @@ import {
   Typography,
   Drawer,
   GridList,
+  Fab,
 } from '@material-ui/core';
-
+import VisibilityIcon from '@material-ui/icons/Visibility';
+import { IconButton } from 'material-ui';
+import { PlayerContext } from '../../contexts';
 const useStyles = makeStyles((theme) => ({
   button: {
     color: 'white',
@@ -30,24 +33,49 @@ const useStyles = makeStyles((theme) => ({
   selected: {
     filter: 'grayscale(80%)',
   },
+  coin: {
+    height: theme.spacing(5),
+    width: theme.spacing(5),
+  },
+  fabButton: {
+    position: 'absolute',
+    zIndex: 1,
+    top: -30,
+    left: 0,
+    right: 0,
+    margin: '0 auto',
+  },
+  cardsIcon: {
+    height: '90%',
+    width: '90%',
+    position: 'absolute',
+  },
 }));
 
 type ShowHandBarProps = {
   openHandDrawer: () => void;
+  coins: number;
+  playerName: string;
 };
 export function ShowHandBar(props: ShowHandBarProps) {
   const classes = useStyles();
-  const { openHandDrawer } = props;
+  const { openHandDrawer, coins, playerName } = props;
 
   return (
     <AppBar position="fixed" color="primary" className={classes.appBar}>
       <Container maxWidth="sm">
         <Box display="flex" justifyContent="center">
-          <Toolbar>
-            <Button type="button" classes={{ root: classes.button }} onClick={openHandDrawer}>
-              Show Hand
-            </Button>
+          <Toolbar style={{ width: '100%' }}>
+            <Typography>{playerName || ''}</Typography>
+            <Fab aria-label="Show hand" className={classes.fabButton} onClick={openHandDrawer}>
+              <img src="cardsIcon.png" alt="Show hand" className={classes.cardsIcon} />
+            </Fab>
+            <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
+              <img src="coin.png" className={classes.coin}></img>
+              <Typography>{coins}</Typography>
+            </Box>
           </Toolbar>
+          {/* <Box position="absolute"></Box> */}
         </Box>
       </Container>
     </AppBar>

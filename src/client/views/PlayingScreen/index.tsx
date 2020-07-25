@@ -56,7 +56,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
   return (
     <Container maxWidth="md">
       <Actions state={state} />
-      <ShowHandBar openHandDrawer={openHandDrawer} />
+      <ShowHandBar openHandDrawer={openHandDrawer} coins={me.coins} playerName={me.nickname} />
       <ShowHandDrawer
         open={handOpen || !!chooseActions}
         closeHandDrawer={closeHandDrawer}
