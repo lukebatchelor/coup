@@ -1,5 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box, Button } from '@material-ui/core';
+import CheckCircleOutlineIcon from '@material-ui/icons/CheckCircleOutline';
+import AccessAlarmsIcon from '@material-ui/icons/AccessAlarms';
+import clsx from 'clsx';
+
 import { getStateInfo } from './PlayingScreen/types';
 import { SocketContext, PlayerContext, CurViewContext } from '../contexts';
 import { actionToText } from './PlayingScreen/Actions';
@@ -23,6 +27,9 @@ const useStyles = makeStyles((theme) => ({
   },
   eliminated: {
     filter: 'grayscale(1)',
+  },
+  seeThrough: {
+    opacity: 0.3,
   },
 }));
 
@@ -61,8 +68,6 @@ export function HostScreen(props: HostScreenProps) {
       }, 3000);
       setTimer(timeout);
     }
-    if (!timer) {
-    }
   };
 
   useEffect(() => {
@@ -81,6 +86,7 @@ export function HostScreen(props: HostScreenProps) {
 
   if (!state) return <div>Loading...</div>;
 
+  const waitingOnAnyPlayer = state.waitingOnPlayers.length > 0;
   const debugResolveText = `Resolution action: ${resolutionCount}/???`;
   const exitClicked = () => {
     socket.emit('exit-game');
@@ -109,9 +115,13 @@ export function HostScreen(props: HostScreenProps) {
           const { deltaCoins } = player;
           const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${-deltaCoins}`);
           const deltaCoinsFontColor = deltaCoins && deltaCoins > 0 ? 'green' : 'red';
+          const isWaitingOnPlayer = state.waitingOnPlayers.includes(player.index);
+
           return (
             <Grid item xs={3} className={player.eliminated && classes.eliminated} key={playerIdx}>
-              <Paper className={classes.paper}>
+              <Paper
+                className={clsx(classes.paper, { [classes.seeThrough]: waitingOnAnyPlayer && !isWaitingOnPlayer })}
+              >
                 <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
                   <Avatar alt={player.nickname} src="/" />
                   <Box ml={1} />
@@ -133,6 +143,18 @@ export function HostScreen(props: HostScreenProps) {
                     );
                   })}
                 </Grid>
+                {waitingOnAnyPlayer && (
+                  <Grid container justify="center">
+                    <Box display="flex">
+                      {isWaitingOnPlayer ? <AccessAlarmsIcon /> : <CheckCircleOutlineIcon />}
+                      {isWaitingOnPlayer && (
+                        <Box ml={1}>
+                          <Typography>Waiting on player...</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Grid>
+                )}
               </Paper>
             </Grid>
           );

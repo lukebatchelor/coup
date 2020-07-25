@@ -47,7 +47,7 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
       return `${playerIsOrYouAre} stealing coins from ${targetName(action.target)}`;
     case 'Challenge':
       if (hasChooseActions)
-        return `${playerIsOrYouAre} wants to call your bluff. Choose a card to either prove your claim or to discard for bluffing!`;
+        return `${playerIsOrYouAre} calling your bluff. Choose a card to either prove your claim or to discard for bluffing!`;
       return `${playerIsOrYouAre} challenging the action!`;
     case 'Block':
       return `${playerIsOrYouAre} blocking the action using  ${aOrAn(action.card)}`;
