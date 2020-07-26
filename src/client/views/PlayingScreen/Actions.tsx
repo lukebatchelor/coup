@@ -10,7 +10,22 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export function actionToText(playerAction: PlayerAction, state: GameState) {
+function getCardForAction(action: Action): Card {
+  switch (action.type) {
+    case 'Steal':
+      return 'Captain';
+    case 'Tax':
+      return 'Duke';
+    case 'Exchange':
+      return 'Ambassador';
+    case 'Assassinate':
+      return 'Assassin';
+    case 'Block':
+      return action.card;
+  }
+}
+
+export function actionToText(playerAction: PlayerAction, state: GameState): string {
   const { isHost, me, isMyTurn, curTurnName, lastAction } = getStateInfo(state);
 
   if (!playerAction) {
@@ -28,7 +43,10 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
     }
     return targetPlayer.nickname;
   };
-  const aOrAn = (thing: string) => (/^[aeiou]/.test(thing.toLowerCase()) ? `an ${thing}` : `a ${thing}`);
+  const aOrAn = (thing: string) => {
+    if (!thing) return '####';
+    return /^[aeiou]/.test(thing.toLowerCase()) ? `an ${thing}` : `a ${thing}`;
+  };
 
   switch (action.type) {
     case 'Income':
@@ -42,25 +60,26 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
     case 'Assassinate':
       return `${playerIsOrYouAre} paying 3 coins to assasinate ${targetName(action.target)}`;
     case 'Exchange':
+      if (isMyTurn) return 'Select two cards to put back in the deck';
       return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Steal':
       return `${playerIsOrYouAre} stealing coins from ${targetName(action.target)}`;
     case 'Challenge':
-      if (hasChooseActions)
-        return `${playerIsOrYouAre} calling your bluff. Choose a card to either prove your claim or to discard for bluffing!`;
-      return `${playerIsOrYouAre} challenging the action!`;
+      const challengedAction = state.actionList[state.actionList.findIndex((a) => a.action.type === 'Challenge') - 1];
+      console.log('here', challengedAction);
+      const challengedCard = getCardForAction(challengedAction.action);
+      const challengedPlayer = targetName(challengedAction.player);
+      if (hasChooseActions) return `${playerIsOrYouAre} claiming you don't have ${aOrAn(challengedCard)}`;
+      return `${playerIsOrYouAre} claiming ${challengedPlayer} doesn't have ${aOrAn(challengedCard)}`;
     case 'Block':
       return `${playerIsOrYouAre} blocking the action using  ${aOrAn(action.card)}`;
-    case 'Exchanging Influence':
-      if (isMyTurn) return 'Select two cards to put back in the deck';
-      return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Revealing Influence':
-      if (hasChooseActions) return 'Choose a card to reveal';
-      return `${targetName(player, true)} must reveal an influence!`;
+      return `Error: Revealing influence shouldn't end up in the action list`;
     case 'Resolved Action':
     case 'Resolving':
       return 'End of turn';
     case 'Declare Winner':
+      // fixme (eliminated on players)
       return isMyTurn ? 'You win!' : `${targetName(player)} wins!`;
     case 'Choose':
       if (action.reason === 'Exchange')
@@ -75,11 +94,15 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
         return `${targetName(player, true)} wasn't bluffing, they revealed ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Failed Challenge') {
         const prevAction = state.actionList[state.actionList.length - 2];
-        return `${targetName(player, true)} revealed ${aOrAn(action.cards[0])}, the challenge fails`;
+        const reversedActions = state.actionList.reverse();
+        const lastChallengeIdx = reversedActions.findIndex((a) => a.action.type === 'Challenge');
+        const challengedAction = reversedActions[lastChallengeIdx + 1];
+        return `The challenge failed. ${actionToText(challengedAction, state)}`;
+        // return `${targetName(player, true)} revealed ${aOrAn(action.cards[0])}, the challenge fails`;
       }
 
       // Fallback?? Shouldn't hit this?
-      return `${targetName(player)} revealed ${aOrAn(action.cards[0])}`;
+      return `Error: action not handled`;
   }
 }
 
@@ -188,7 +211,10 @@ export function Actions(props: ActionsProps) {
     <>
       <Paper>
         <Box p={2} mt={2}>
-          <Typography>{actionToText(lastAction, state)}</Typography>
+          <Typography gutterBottom>{actionToText(lastAction, state)}</Typography>
+          {actions.chooseActions && lastAction.action.type !== 'Exchange' && (
+            <Typography>Choose an influence to reveal below</Typography>
+          )}
         </Box>
       </Paper>
       <Box mt={4} mb={10}>
