@@ -241,11 +241,22 @@ export function Actions(props: ActionsProps) {
     <>
       <Paper>
         <Box p={2} mt={2}>
-          <Typography gutterBottom>{actionToText(lastAction, state)}</Typography>
-          {actions.chooseActions && lastAction.action.type !== 'Exchange' && (
-            <Typography gutterBottom>Choose an influence to reveal below</Typography>
+          {state.actionList.length === 0 && (
+            <Typography align="center" gutterBottom>
+              {actionToText(lastAction, state)}
+            </Typography>
           )}
-          {state.waitingOnPlayers.length > 0 && <Typography>Waiting on other players...</Typography>}
+          {state.actionList.map((action, actionIdx) => (
+            <Typography gutterBottom align="center" key={actionIdx}>
+              {actionToText(action, state)}
+            </Typography>
+          ))}
+          {actions.chooseActions && lastAction.action.type !== 'Exchange' && (
+            <Typography align="center" gutterBottom>
+              Choose an influence to reveal below
+            </Typography>
+          )}
+          {state.waitingOnPlayers.length > 0 && <Typography align="center">Waiting on other players...</Typography>}
         </Box>
       </Paper>
       <Box mt={4} mb={10}>
