@@ -107,7 +107,8 @@ export default class Coup {
     console.log('action on top of stack', JSON.stringify(actionOnTopOfStack));
     if (
       actionOnTopOfStack &&
-      (this.isActionChallengable(actionOnTopOfStack.action) || this.isActionBlockable(actionOnTopOfStack.action))
+      (this.isActionChallengable(actionOnTopOfStack.action) || this.isActionBlockable(actionOnTopOfStack.action)) &&
+      action.type !== 'Pass'
     ) {
       this.updateWaitingOnPlayers(actionOnTopOfStack.player, actionOnTopOfStack.action);
     }
@@ -176,6 +177,19 @@ export default class Coup {
         if (!this.state.challengeUsable && action.type !== 'Block' && !blockable) {
           return;
         }
+
+        // If the action is targetting one player only that player can pass
+        const isTargettedAction = this.isTargettedAction(action);
+        if (isTargettedAction && (action as StealAction).target != index) {
+          return;
+        }
+
+        const usableCards = this.state.hands[player].filter((card) => !card.flipped).map((card) => card.card);
+        const hasRequiredCardToBlock = this.getAvailableBlockActionsForCards(action, usableCards).length > 0;
+        // Can't pass if the action needs to be blocked but player does not have the required cards
+        // if (!challengable && blockable && !hasRequiredCardToBlock) {
+        //   return;
+        // }
 
         return index;
       })
@@ -331,8 +345,8 @@ export default class Coup {
         break;
       case 'Steal':
         const coins = Math.min(2, this.state.players[action.target].coins);
-        this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: action.target, coins: 2 });
-        this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins: 2 });
+        this.executeResolutionAction({ type: 'Lose Coins', losingPlayer: action.target, coins });
+        this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins });
         break;
       case 'Tax':
         this.executeResolutionAction({ type: 'Gain Coins', gainingPlayer: player, coins: 3 });
@@ -391,7 +405,7 @@ export default class Coup {
     }
 
     // All players that aren't you are valid targets for actions.
-    const targets = this.state.players.filter((p, _) => p.index !== playerIndex).map((p) => p.index);
+    const targets = this.state.players.filter((p, _) => p.index !== playerIndex && !p.eliminated).map((p) => p.index);
 
     if (this.state.players[playerIndex].coins > 9) {
       // Player _has_ to play a coup.
@@ -424,13 +438,16 @@ export default class Coup {
 
   // Get actions available when the is an action on the stack.
   getActionOnStackActions(playerIndex: number, actionOnStack: PlayerAction): AvailableActions {
-    if (actionOnStack.player === playerIndex) {
+    const action = actionOnStack.action;
+    const waitingOnPlayer = this.state.waitingOnPlayers.includes(playerIndex);
+    const isTargetedAction = this.isTargettedAction(action);
+    const isTargetOfAction = (action as StealAction).target === playerIndex;
+    if (actionOnStack.player === playerIndex || !waitingOnPlayer || (isTargetedAction && !isTargetOfAction)) {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
     const challengable = this.isActionChallengable(actionOnStack.action);
     const challengeUsable = this.state.challengeUsable;
-    const waitingOnPlayer = this.state.waitingOnPlayers.includes(playerIndex);
     const generalActions: Array<ChallengeAction | PassAction> = [];
     if (waitingOnPlayer) {
       generalActions.push({ type: 'Pass' });
@@ -664,6 +681,10 @@ export default class Coup {
       case 'Revealing Influence':
         return false;
     }
+  }
+
+  isTargettedAction(action: Action): action is StealAction | AssassinateAction {
+    return ['Steal', 'Assassinate'].includes(action.type);
   }
 
   isActionLegal(player: number, action: Action): boolean {

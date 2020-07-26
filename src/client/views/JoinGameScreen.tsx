@@ -13,7 +13,7 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
   const [playerInfo, setPlayerInfo] = useContext(PlayerContext);
   const [, setCurView] = useContext(CurViewContext);
 
-  const [nickName, setNickName] = useState<string>('');
+  const [nickName, setNickName] = useState<string>(playerInfo.nickName);
   const [nickNameError, setNickNameError] = useState<string>('');
   const [roomCode, setRoomCode] = useState<string>(playerInfo.roomCode);
   const [roomCodeHelperText, setRoomCodeHelperText] = useState<string>('(four letter code given to you by your host)');
