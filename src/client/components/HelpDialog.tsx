@@ -122,7 +122,7 @@ export function HelpDialog(props: HelpDialogProps) {
         <Box mb={4} />
         <hr />
         <Box mb={4} />
-        <Typography variant="h5">Character Cheet Sheet</Typography>
+        <Typography variant="h5">Character Cheat Sheet</Typography>
         <Table aria-label="Character Cheat Sheet">
           <TableHead>
             <TableRow>

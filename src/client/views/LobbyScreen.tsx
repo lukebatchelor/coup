@@ -51,7 +51,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
         Room Code: {roomCode}
       </Typography>
       <Typography variant="h5" align="center">
-        Nick name: {nickName}
+        Nickname: {nickName}
       </Typography>
       <Box mt={3}>
         <Paper className={classes.paper}>

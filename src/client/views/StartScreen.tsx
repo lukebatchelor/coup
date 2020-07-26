@@ -39,11 +39,11 @@ export function StartScreen(props: StartScreenProps) {
     <Container maxWidth="md">
       <Paper className={classes.paper}>
         <Typography paragraph>
-          In a future where the government is run for profit, all but a privledged few live lives of poverty and
+          In a future where the government is run for profit, all but a privileged few live lives of poverty and
           desperation.
         </Typography>
         <Typography paragraph>
-          Out of these opressed masses are sown the seeds of a rebellion that throws the government into chaos.
+          Out of these oppressed masses are sown the seeds of a rebellion that throws the government into chaos.
         </Typography>
 
         <Typography paragraph>
