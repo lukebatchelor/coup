@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { makeStyles, Container, Typography, Box, Paper, Grid, Avatar, Button } from '@material-ui/core';
 import { SocketContext, PlayerContext, CurViewContext } from '../contexts';
 import { Views } from './Views';
+import playerColors from '../components/playerColors';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -60,9 +61,14 @@ export function LobbyScreen(props: LobbyScreenProps) {
                 <Typography>Waiting for players to join...</Typography>
               </Box>
             )}
-            {players.map((player) => (
+            {players.map((player, playerIdx) => (
               <Box display="flex" flexDirection="row" alignItems="center" key={player.id}>
-                <Avatar alt={player.nickName}>{player.nickName[0].toUpperCase()}</Avatar>
+                <Avatar
+                  alt={player.nickName}
+                  style={{ backgroundColor: playerColors[playerIdx].background, color: playerColors[playerIdx].color }}
+                >
+                  {player.nickName[0].toUpperCase()}
+                </Avatar>
                 <Box padding={3}>
                   <Typography variant="h6">{player.nickName}</Typography>
                 </Box>
