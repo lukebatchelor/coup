@@ -52,6 +52,11 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
         setNickNameError('Name already taken');
         return;
       }
+      if (maybeRoom.room.players.length > 6) {
+        setRoomCodeHelperText('Room Full');
+        setRoomCodeError(true);
+        return;
+      }
       setPlayerInfo({ roomCode, nickName });
       setCurView(Views.Lobby);
     }
