@@ -134,17 +134,6 @@ export function HostScreen(props: HostScreenProps) {
 
   return (
     <Container maxWidth="lg">
-      {state.actionList.length === 0 && (
-        <Typography variant="h5" gutterBottom align="center">
-          {`Waiting for ${getStateInfo(state).curTurnName}...`}
-        </Typography>
-      )}
-      {state.actionList.map((action, actionIdx) => (
-        <Typography variant="h5" gutterBottom align="center" key={actionIdx}>
-          {actionToText(action, state)}
-        </Typography>
-      ))}
-
       <Box mt={2} />
       <Grid container spacing={3} justify="center">
         {state.players.map((player, playerIdx) => {
@@ -204,6 +193,17 @@ export function HostScreen(props: HostScreenProps) {
           );
         })}
       </Grid>
+      <Box mt={4} />
+      {state.actionList.length === 0 && (
+        <Typography variant="h5" gutterBottom align="center">
+          {`Waiting for ${getStateInfo(state).curTurnName}...`}
+        </Typography>
+      )}
+      {state.actionList.map((action, actionIdx) => (
+        <Typography variant="h5" gutterBottom align="center" key={actionIdx}>
+          {actionToText(action, state)}
+        </Typography>
+      ))}
       <Box mt={4} />
       {state.actionList.length === 1 && state.actionList[0].action.type === 'Declare Winner' && (
         <Grid container justify="center" spacing={4}>
