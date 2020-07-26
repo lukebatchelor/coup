@@ -102,7 +102,7 @@ export function HostScreen(props: HostScreenProps) {
     <Container maxWidth="lg">
       {state.actionList.length === 0 && (
         <Typography variant="h5" gutterBottom align="center">
-          {`${getStateInfo(state).curTurnName}'s turn`}
+          {`Waiting for ${getStateInfo(state).curTurnName}...`}
         </Typography>
       )}
       {state.actionList.map((action, actionIdx) => (

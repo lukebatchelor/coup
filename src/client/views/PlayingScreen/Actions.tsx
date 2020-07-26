@@ -36,17 +36,14 @@ export function actionToText(playerAction: PlayerAction, state: GameState): stri
   const playerName = state.players[player].nickname;
   const hasChooseActions = isHost ? false : Boolean(state.actions[me.index].chooseActions);
   const playerIsOrYouAre = !isHost && state.players[player].id === me.id ? `You are` : `${playerName} is`;
-  const targetName = (targetIdx: number, capitalise: boolean = false) => {
-    const targetPlayer = state.players[targetIdx];
-    if (!isHost && targetPlayer.id === me.id) {
-      return capitalise ? 'You' : 'you';
-    }
-    return targetPlayer.nickname;
-  };
+  const targetPlayer = state.players[player];
+  const targetPlayerName = !isHost && targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
+  const playerIsTarget = !isHost && targetPlayer.id === me.id;
   const aOrAn = (thing: string) => {
     if (!thing) return '####';
     return /^[aeiou]/.test(thing.toLowerCase()) ? `an ${thing}` : `a ${thing}`;
   };
+  const capitalise = ([first, ...rest]: string) => [first.toUpperCase(), ...rest].join('');
 
   switch (action.type) {
     case 'Income':
@@ -54,51 +51,63 @@ export function actionToText(playerAction: PlayerAction, state: GameState): stri
     case 'Foreign Aid':
       return `${playerIsOrYouAre} collecting foreign aid (+2 coins)`;
     case 'Coup':
-      return `${playerIsOrYouAre} paying 7 coins to stage a coup against ${targetName(action.target)}`;
+      return `${playerIsOrYouAre} paying 7 coins to stage a coup against ${targetPlayerName}`;
     case 'Tax':
       return `${playerIsOrYouAre} collecting tax as the Duke (+3 coins)`;
     case 'Assassinate':
-      return `${playerIsOrYouAre} paying 3 coins to assasinate ${targetName(action.target)}`;
+      return `${playerIsOrYouAre} paying 3 coins to assasinate ${targetPlayerName}`;
     case 'Exchange':
       if (isMyTurn) return 'Select two cards to put back in the deck';
       return `${playerIsOrYouAre} exchanging cards with the deck`;
     case 'Steal':
-      return `${playerIsOrYouAre} stealing coins from ${targetName(action.target)}`;
+      return `${playerIsOrYouAre} stealing coins from ${targetPlayerName}`;
     case 'Challenge':
       const challengedAction = state.actionList[state.actionList.findIndex((a) => a.action.type === 'Challenge') - 1];
-      console.log('here', challengedAction);
       const challengedCard = getCardForAction(challengedAction.action);
-      const challengedPlayer = targetName(challengedAction.player);
+      const challengedPlayer = state.players[challengedAction.player].nickname;
       if (hasChooseActions) return `${playerIsOrYouAre} claiming you don't have ${aOrAn(challengedCard)}`;
       return `${playerIsOrYouAre} claiming ${challengedPlayer} doesn't have ${aOrAn(challengedCard)}`;
     case 'Block':
-      return `${playerIsOrYouAre} blocking the action using  ${aOrAn(action.card)}`;
+      return `${playerIsOrYouAre} blocking the action using ${aOrAn(action.card)}`;
     case 'Revealing Influence':
       return `Error: Revealing influence shouldn't end up in the action list`;
     case 'Resolved Action':
     case 'Resolving':
       return 'End of turn';
     case 'Declare Winner':
-      // fixme (eliminated on players)
-      return isMyTurn ? 'You win!' : `${targetName(player)} wins!`;
+      if (playerIsTarget) {
+        return 'You win!';
+      } else {
+        return `${targetPlayerName} wins!`;
+      }
     case 'Choose':
       if (action.reason === 'Exchange')
-        return `${targetName(player, true)} exchanged ${action.cards.length} cards with the court deck`;
-      if (action.reason === 'Assassination')
-        return `${targetName(player, true)} was assassinated and revealed  ${aOrAn(action.cards[0])}`;
+        return `${capitalise(targetPlayerName)} exchanged ${action.cards.length} cards with the court deck`;
+      if (action.reason === 'Assassination') {
+        if (playerIsTarget) {
+          return `You were assassinated`;
+        }
+        return `${capitalise(targetPlayerName)} was assassinated and revealed ${aOrAn(action.cards[0])}`;
+      }
       if (action.reason === 'Coup')
-        return `The coup against ${targetName(player)} succeeded, revealing  ${aOrAn(action.cards[0])}`;
-      if (action.reason === 'Failed Bluff')
-        return `${targetName(player, true)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
-      if (action.reason === 'Beaten Challenge')
-        return `${targetName(player, true)} wasn't bluffing, they revealed ${aOrAn(action.cards[0])}`;
+        return `The coup against ${targetPlayerName} succeeded, revealing ${aOrAn(action.cards[0])}`;
+      if (action.reason === 'Failed Bluff') {
+        if (playerIsTarget) {
+          return `You were caught bluffing!`;
+        }
+        return `${capitalise(targetPlayerName)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
+      }
+      if (action.reason === 'Beaten Challenge') {
+        if (playerIsTarget) {
+          return `You weren't bluffing! Your opponent must now reveal an influence!`;
+        }
+        return `${capitalise(targetPlayerName)} wasn't bluffing, they revealed ${aOrAn(action.cards[0])}`;
+      }
       if (action.reason === 'Failed Challenge') {
-        const prevAction = state.actionList[state.actionList.length - 2];
         const reversedActions = state.actionList.reverse();
         const lastChallengeIdx = reversedActions.findIndex((a) => a.action.type === 'Challenge');
         const challengedAction = reversedActions[lastChallengeIdx + 1];
         return `The challenge failed. ${actionToText(challengedAction, state)}`;
-        // return `${targetName(player, true)} revealed ${aOrAn(action.cards[0])}, the challenge fails`;
       }
 
       // Fallback?? Shouldn't hit this?
@@ -162,7 +171,7 @@ function ActionGroup(props: ActionGroupProps) {
         {secondaryAction && (
           <Button
             fullWidth
-            variant="contained"
+            variant="outlined"
             color="primary"
             key={`action-back`}
             className={classes.actionButton}
