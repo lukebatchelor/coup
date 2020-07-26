@@ -134,7 +134,7 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
               return (
                 <Box ml={1} mr={1} display="flex" alignItems="center" flexDirection="column" key={'cc' + i}>
                   <img
-                    src={`/assets/${card.card}.png`}
+                    src={`assets/${card.card}.png`}
                     className={className}
                     alt={card.card}
                     onClick={() => onClick(i)}
