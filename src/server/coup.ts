@@ -176,7 +176,9 @@ export default class Coup {
 
         // If the action is targetting one player only that player can pass
         const isTargettedAction = this.isTargettedAction(action);
-        if (isTargettedAction && (action as StealAction).target != index) {
+        const isChallengable = this.isActionChallengable(action);
+        const challengeUsable = this.state.challengeUsable;
+        if (isTargettedAction && (action as StealAction).target != index && (!isChallengable || !challengeUsable)) {
           return;
         }
 
@@ -439,18 +441,26 @@ export default class Coup {
     const waitingOnPlayer = this.state.waitingOnPlayers.includes(playerIndex);
     const isTargetedAction = this.isTargettedAction(action);
     const isTargetOfAction = (action as StealAction).target === playerIndex;
-    if (actionOnStack.player === playerIndex || !waitingOnPlayer || (isTargetedAction && !isTargetOfAction)) {
+    const challengable = this.isActionChallengable(actionOnStack.action);
+    const challengeUsable = this.state.challengeUsable;
+    if (
+      actionOnStack.player === playerIndex ||
+      !waitingOnPlayer ||
+      (isTargetedAction && !isTargetOfAction && (!challengable || !challengeUsable))
+    ) {
       return { generalActions: [], characterActions: [], bluffActions: [] };
     }
 
-    const challengable = this.isActionChallengable(actionOnStack.action);
-    const challengeUsable = this.state.challengeUsable;
     const generalActions: Array<ChallengeAction | PassAction> = [];
     if (waitingOnPlayer) {
       generalActions.push({ type: 'Pass' });
       if (challengeUsable && challengable) {
         generalActions.push({ type: 'Challenge' });
       }
+    }
+
+    if (isTargetedAction && !isTargetOfAction) {
+      return { generalActions, characterActions: [], bluffActions: [] };
     }
 
     const usableCards = this.state.hands[playerIndex].filter((card) => !card.flipped).map((card) => card.card);
