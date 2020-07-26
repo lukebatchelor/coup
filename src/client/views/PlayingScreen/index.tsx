@@ -49,7 +49,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
 
   React.useEffect(() => {
     console.log('confetti', showConfetti);
-    const confettiSettings = { target: 'confetti-canvas' };
+    const confettiSettings = { target: 'confetti-canvas', start_from_edge: true };
     const confetti = new ConfettiGenerator(confettiSettings);
     if (showConfetti) {
       confetti.render();

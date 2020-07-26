@@ -111,7 +111,7 @@ export function HostScreen(props: HostScreenProps) {
   useEffect(resolveIfNoMoves, [state]);
 
   React.useEffect(() => {
-    const confettiSettings = { target: 'confetti-canvas' };
+    const confettiSettings = { target: 'confetti-canvas', start_from_edge: true };
     const confetti = new ConfettiGenerator(confettiSettings);
     if (showConfetti) {
       confetti.render();
