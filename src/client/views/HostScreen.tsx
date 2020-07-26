@@ -34,6 +34,9 @@ const useStyles = makeStyles((theme) => ({
   seeThrough: {
     opacity: 0.3,
   },
+  highlighted: {
+    background: '#05b50566',
+  },
 }));
 
 function noPlayerMoves(state: GameState) {
@@ -141,11 +144,15 @@ export function HostScreen(props: HostScreenProps) {
           const deltaCoinsStr = deltaCoins && (deltaCoins > 0 ? `+ ${deltaCoins}` : `- ${-deltaCoins}`);
           const deltaCoinsFontColor = deltaCoins && deltaCoins > 0 ? 'green' : 'red';
           const isWaitingOnPlayer = state.waitingOnPlayers.includes(player.index);
+          const isMyTurn = state.currTurn === player.index;
 
           return (
             <Grid item xs={3} className={clsx({ [classes.eliminated]: player.eliminated })} key={playerIdx}>
               <Paper
-                className={clsx(classes.paper, { [classes.seeThrough]: waitingOnAnyPlayer && !isWaitingOnPlayer })}
+                className={clsx(classes.paper, {
+                  [classes.seeThrough]: waitingOnAnyPlayer && !isWaitingOnPlayer,
+                  [classes.highlighted]: isMyTurn,
+                })}
               >
                 <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
                   <Avatar
