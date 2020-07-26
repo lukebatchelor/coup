@@ -3,6 +3,7 @@ import { makeStyles, Container, Paper, Typography, Grid, Avatar, Box, Button } f
 import CheckCircleOutlineIcon from '@material-ui/icons/CheckCircleOutline';
 import AccessAlarmsIcon from '@material-ui/icons/AccessAlarms';
 import clsx from 'clsx';
+import ConfettiGenerator from 'confetti-js';
 
 import { getStateInfo } from './PlayingScreen/types';
 import { SocketContext, PlayerContext, CurViewContext } from '../contexts';
@@ -56,6 +57,8 @@ export function HostScreen(props: HostScreenProps) {
   const [state, setState] = useState<GameState>(null);
   const [resolutionCount, setResolutionCount] = useState<number>(0);
   const [timer, setTimer] = useState(null);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+
   const urlParams = new URLSearchParams(window.location.search);
   const showDebugButton = urlParams.has('debug');
 
@@ -81,6 +84,14 @@ export function HostScreen(props: HostScreenProps) {
       if (gameState.actionStack.length === 0) {
         setResolutionCount(0);
       }
+      if (
+        gameState.actionList.length &&
+        gameState.actionList[gameState.actionList.length - 1].action.type === 'Declare Winner'
+      ) {
+        setShowConfetti(true);
+      } else {
+        setShowConfetti(false);
+      }
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
 
@@ -90,6 +101,16 @@ export function HostScreen(props: HostScreenProps) {
   }, []);
 
   useEffect(resolveIfNoMoves, [state]);
+
+  React.useEffect(() => {
+    const confettiSettings = { target: 'confetti-canvas' };
+    const confetti = new ConfettiGenerator(confettiSettings);
+    if (showConfetti) {
+      confetti.render();
+    }
+
+    return () => confetti.clear();
+  }, [showConfetti]);
 
   if (!state) return <div>Loading...</div>;
 

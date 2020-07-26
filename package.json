@@ -21,6 +21,7 @@
   "dependencies": {
     "@material-ui/core": "^4.9.7",
     "@material-ui/icons": "^4.9.1",
+    "confetti-js": "^0.0.18",
     "express": "^4.17.1",
     "express-session": "^1.17.0",
     "hookrouter": "^1.2.3",

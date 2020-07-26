@@ -17,5 +17,11 @@
     "baseUrl": "."
   },
   "include": ["src/**/*", "test/**/*"],
-  "files": ["./typings/global.d.ts", "./typings/sqlite-async.d.ts", "./typings/coup.d.ts", "./typings/api.d.ts"]
+  "files": [
+    "./typings/global.d.ts",
+    "./typings/sqlite-async.d.ts",
+    "./typings/confetti-js.d.ts",
+    "./typings/coup.d.ts",
+    "./typings/api.d.ts"
+  ]
 }

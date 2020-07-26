@@ -1,5 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { makeStyles, Container, AppBar, Box, Toolbar, ButtonGroup, Button, Typography } from '@material-ui/core';
+import ConfettiGenerator from 'confetti-js';
+
 import { PlayerContext, SocketContext } from '../../contexts';
 import { ShowHandBar, ShowHandDrawer } from './ShowHandBar';
 import { getStateInfo } from './types';
@@ -15,6 +17,7 @@ export function PlayingScreen(props: PlayingScreenProps) {
   const [handOpen, setHandOpen] = useState<boolean>(false);
   const [state, setState] = useState<GameState>(null);
   const [hostDisconnected, setHostDisconnected] = useState<boolean>(false);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
 
   useEffect(() => {
     socket.on('game-state', ({ gameState, hostId }) => {
@@ -22,6 +25,14 @@ export function PlayingScreen(props: PlayingScreenProps) {
       setState(gameState);
       if (!hostId) {
         setHostDisconnected(true);
+      }
+      if (
+        gameState.actionList.length &&
+        gameState.actionList[gameState.actionList.length - 1].action.type === 'Declare Winner'
+      ) {
+        setShowConfetti(true);
+      } else {
+        setShowConfetti(false);
       }
     });
     socket.on('host-disconnected', () => {
@@ -35,6 +46,17 @@ export function PlayingScreen(props: PlayingScreenProps) {
       socket.off('host-disconnected');
     };
   }, []);
+
+  React.useEffect(() => {
+    console.log('confetti', showConfetti);
+    const confettiSettings = { target: 'confetti-canvas' };
+    const confetti = new ConfettiGenerator(confettiSettings);
+    if (showConfetti) {
+      confetti.render();
+    }
+
+    return () => confetti.clear();
+  }, [showConfetti]);
 
   const openHandDrawer = () => setHandOpen(true);
   const closeHandDrawer = () => setHandOpen(false);
