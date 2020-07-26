@@ -67,11 +67,6 @@ export function StartScreen(props: StartScreenProps) {
           </Button>
         </Grid>
       </Box>
-      <Box mt={3} mb={4} textAlign="center">
-        <Link href="#" variant="body2" onClick={onInstructionsClick}>
-          {'Instructions'}
-        </Link>
-      </Box>
     </Container>
   );
 }

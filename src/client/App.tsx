@@ -48,7 +48,7 @@ function shouldShowHomeButton(curView: Views) {
   return [Views.InstructionsScreen, Views.JoinGame, Views.Lobby, Views.PlayingScreen].includes(curView);
 }
 function shouldShowHelpButton(curView: Views) {
-  return curView === Views.PlayingScreen;
+  return [Views.PlayingScreen, Views.StartScreen].includes(curView);
 }
 
 export function App() {
