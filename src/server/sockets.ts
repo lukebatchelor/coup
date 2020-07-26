@@ -197,14 +197,12 @@ export function configureSockets(appServer: http.Server) {
     }
 
     async function restartGame() {
-      console.log(`${client.playerId} trying to resolve action on top of stack`);
       const user = await getUser(client.playerId);
       const usersInRoom = await getUsersInRoom(user.roomCode);
       const hostId = usersInRoom.filter((p) => p.host)[0].id;
-      const room = await getRoom(user.roomCode);
-      const coup = new Coup([]);
-      coup.loadJson(room.gameState);
-      coup.resolve();
+      const playersInRoom = usersInRoom.filter((p) => p.host == false).map((p) => ({ id: p.id, nickname: p.nickName }));
+      console.log('Restarting game', { usersInRoom, players: playersInRoom });
+      const coup = new Coup(shuffle(playersInRoom));
       await setGameStateForRoom(user.roomCode, coup.dumpJson());
 
       const { actionStack, actions, players, hands, currTurn, actionList, waitingOnPlayers }: GameState = coup.state;
