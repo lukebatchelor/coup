@@ -146,7 +146,13 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
           </GridList>
           {allowSelection > 1 && (
             <Box display="flex" justifyContent="center" mb={2}>
-              <Button type="button" variant="contained" onClick={handleSubmitSelection} disabled={submitDisabled}>
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                onClick={handleSubmitSelection}
+                disabled={submitDisabled}
+              >
                 {submitText}
               </Button>
             </Box>
