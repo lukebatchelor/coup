@@ -29,6 +29,11 @@ export function PlayingScreen(props: PlayingScreenProps) {
       setHostDisconnected(true);
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
+
+    return function cleanUp() {
+      socket.off('game-state');
+      socket.off('host-disconnected');
+    };
   }, []);
 
   const openHandDrawer = () => setHandOpen(true);

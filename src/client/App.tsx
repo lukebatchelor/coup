@@ -81,6 +81,9 @@ export function App() {
           else setCurView(Views.Lobby);
         }
       });
+      return function cleanUp() {
+        socket.off('welcome');
+      };
     }
   }, [socket]);
 

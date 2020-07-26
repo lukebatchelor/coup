@@ -83,6 +83,10 @@ export function HostScreen(props: HostScreenProps) {
       }
     });
     socket.emit('player-loaded-game', { roomCode: playerInfo.roomCode });
+
+    return function cleanUp() {
+      socket.off('game-state');
+    };
   }, []);
 
   useEffect(resolveIfNoMoves, [state]);
