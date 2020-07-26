@@ -26,6 +26,9 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
     } else if (nickName.toLowerCase() === 'host') {
       setNickNameError('Invalid nickname');
       return;
+    } else if (nickName.length > 11) {
+      setNickNameError('Nickname max length is 12');
+      return;
     }
 
     if (roomCode === '') {
