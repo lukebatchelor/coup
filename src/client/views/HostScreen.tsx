@@ -21,11 +21,12 @@ const useStyles = makeStyles((theme) => ({
     width: theme.spacing(5),
   },
   card: {
-    // marginLeft: theme.spacing(1),
-    // marginRight: theme.spacing(1),
     padding: theme.spacing(1),
-
     width: '100%',
+    // optimization to prevent blurry images
+    transform: 'translateZ(0px)',
+    // optimization specifically for chrome on mac
+    imageRendering: '-webkit-optimize-contrast',
   },
   eliminated: {
     filter: 'grayscale(1)',

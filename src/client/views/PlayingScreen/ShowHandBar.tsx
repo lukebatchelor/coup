@@ -28,6 +28,10 @@ const useStyles = makeStyles((theme) => ({
     width: 'auto',
     // Need this for when showing a box shadow, need it to blend around the card
     background: 'rgba(0,0,0,0.6)',
+    // optimization to prevent blurry images
+    transform: 'translateZ(0px)',
+    // optimization specifically for chrome on mac
+    imageRendering: '-webkit-optimize-contrast',
   },
   selected: {
     filter: 'grayscale(80%)',
