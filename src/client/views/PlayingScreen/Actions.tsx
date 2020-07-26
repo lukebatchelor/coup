@@ -25,6 +25,25 @@ function getCardForAction(action: Action): Card {
   }
 }
 
+function getTargetPlayer(action: Action, state: GameState, me: any, isHost: boolean) {
+  if (action.type === 'Coup' || action.type === 'Steal' || action.type === 'Assassinate') {
+    const targetPlayer = state.players[action.target];
+    const targetPlayerName = !isHost && targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
+    const targetPlayerId = targetPlayer.id;
+
+    return {
+      targetPlayer,
+      targetPlayerId,
+      targetPlayerName,
+    };
+  }
+  return {
+    targetPlayer: null,
+    targetPlayerId: '',
+    targetPlayerName: '',
+  };
+}
+
 export function actionToText(playerAction: PlayerAction, state: GameState): string {
   const { isHost, me, isMyTurn, curTurnName, lastAction } = getStateInfo(state);
 
@@ -36,15 +55,17 @@ export function actionToText(playerAction: PlayerAction, state: GameState): stri
   const playerName = state.players[player].nickname;
   const hasChooseActions = isHost ? false : Boolean(state.actions[me.index].chooseActions);
   const playerIsOrYouAre = !isHost && state.players[player].id === me.id ? `You are` : `${playerName} is`;
-  const targetPlayer = state.players[player];
-  const targetPlayerName = !isHost && targetPlayer.id === me.id ? 'you' : targetPlayer.nickname;
-  const playerIsTarget = !isHost && targetPlayer.id === me.id;
+  const { targetPlayerName, targetPlayerId } = getTargetPlayer(action, state, me, isHost);
+  const playerIsTarget = !isHost && targetPlayerId === me.id;
+
   const aOrAn = (thing: string) => {
     if (!thing) return '####';
     return /^[aeiou]/.test(thing.toLowerCase()) ? `an ${thing}` : `a ${thing}`;
   };
-  const capitalise = ([first, ...rest]: string) => [first.toUpperCase(), ...rest].join('');
-
+  const capitalise = ([first, ...rest]: string) => {
+    if (!first) return '';
+    return [first.toUpperCase(), ...rest].join('');
+  };
   switch (action.type) {
     case 'Income':
       return `${playerIsOrYouAre} collecting income (+1 coin)`;
