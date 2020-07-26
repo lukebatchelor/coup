@@ -130,6 +130,11 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
           <Typography variant="h5" align="center" gutterBottom>
             Hand
           </Typography>
+          {allowSelection > 1 && (
+            <Typography align="center" gutterBottom>
+              Select two cards to put back in the deck
+            </Typography>
+          )}
           <GridList cols={2} style={{ flexWrap: 'nowrap', transform: 'translateZ(0)' }}>
             {cards.map((card, i: number) => {
               const className = clsx(classes.card, {
@@ -151,7 +156,6 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
                     alt={card.card}
                     onClick={() => onClick(i)}
                   />
-                  <Typography align="center">{card.card}</Typography>
                 </Box>
               );
             })}
