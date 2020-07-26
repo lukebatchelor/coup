@@ -91,7 +91,7 @@ export function HostScreen(props: HostScreenProps) {
   const waitingOnAnyPlayer = state.waitingOnPlayers.length > 0;
   const debugResolveText = `Resolution action: ${resolutionCount}/???`;
   const exitClicked = () => {
-    socket.emit('exit-game');
+    socket.emit('player-leave-room', { roomCode: playerInfo.roomCode });
     setCurView(Views.StartScreen);
   };
   const playAgainClicked = () => {
