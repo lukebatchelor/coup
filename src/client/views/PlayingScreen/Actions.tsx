@@ -57,6 +57,7 @@ export function actionToText(playerAction: PlayerAction, state: GameState): stri
   const playerIsOrYouAre = !isHost && state.players[player].id === me.id ? `You are` : `${playerName} is`;
   const { targetPlayerName, targetPlayerId } = getTargetPlayer(action, state, me, isHost);
   const playerIsTarget = !isHost && targetPlayerId === me.id;
+  const isOwnAction = !isHost && state.players[player].id === me.id;
 
   const aOrAn = (thing: string) => {
     if (!thing) return '####';
@@ -95,33 +96,33 @@ export function actionToText(playerAction: PlayerAction, state: GameState): stri
     case 'Resolving':
       return 'End of turn';
     case 'Declare Winner':
-      if (playerIsTarget) {
+      if (isOwnAction) {
         return 'You win!';
       } else {
-        return `${targetPlayerName} wins!`;
+        return `${playerName} wins!`;
       }
     case 'Choose':
       if (action.reason === 'Exchange')
-        return `${capitalise(targetPlayerName)} exchanged ${action.cards.length} cards with the court deck`;
+        return `${capitalise(playerName)} exchanged ${action.cards.length} cards with the court deck`;
       if (action.reason === 'Assassination') {
-        if (playerIsTarget) {
+        if (isOwnAction) {
           return `You were assassinated`;
         }
-        return `${capitalise(targetPlayerName)} was assassinated and revealed ${aOrAn(action.cards[0])}`;
+        return `${capitalise(playerName)} was assassinated and revealed ${aOrAn(action.cards[0])}`;
       }
       if (action.reason === 'Coup')
-        return `The coup against ${targetPlayerName} succeeded, revealing ${aOrAn(action.cards[0])}`;
+        return `The coup against ${playerName} succeeded, revealing ${aOrAn(action.cards[0])}`;
       if (action.reason === 'Failed Bluff') {
-        if (playerIsTarget) {
+        if (isOwnAction) {
           return `You were caught bluffing!`;
         }
-        return `${capitalise(targetPlayerName)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
+        return `${capitalise(playerName)} was caught bluffing and revealed ${aOrAn(action.cards[0])}`;
       }
       if (action.reason === 'Beaten Challenge') {
-        if (playerIsTarget) {
+        if (isOwnAction) {
           return `You weren't bluffing! Your opponent must now reveal an influence!`;
         }
-        return `${capitalise(targetPlayerName)} wasn't bluffing, they revealed ${aOrAn(action.cards[0])}`;
+        return `${capitalise(playerName)} wasn't bluffing, they revealed ${aOrAn(action.cards[0])}`;
       }
       if (action.reason === 'Failed Challenge') {
         const reversedActions = state.actionList.reverse();
