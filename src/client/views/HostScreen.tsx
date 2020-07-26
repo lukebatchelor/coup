@@ -74,6 +74,13 @@ export function HostScreen(props: HostScreenProps) {
       }, 3000);
       setTimer(timeout);
     }
+    // todo: not sure how to clean this up, cant get a reference to timer?
+    return function cleanUp() {
+      setTimer((timer: any): any => {
+        clearTimeout(timer);
+        return null;
+      });
+    };
   };
 
   useEffect(() => {
