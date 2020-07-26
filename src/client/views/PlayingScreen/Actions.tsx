@@ -86,13 +86,19 @@ export function actionToText(playerAction: PlayerAction, state: GameState) {
 /**
  * Helper function for adding custom labels for certain actions (i.e ones with targets)
  */
-function actionToString(action: Action, state: GameState) {
-  if (action.type === 'Coup') return `Coup ${state.players[action.target].nickname}`;
-  if (action.type === 'Assassinate') return `Assasinate ${state.players[action.target].nickname}`;
-  if (action.type === 'Steal') return `Steal from ${state.players[action.target].nickname}`;
+function actionToString(action: Action, state: GameState, secondaryAction: Action['type']) {
+  if (secondaryAction) {
+    if (action.type === 'Coup') return `Coup ${state.players[action.target].nickname}`;
+    if (action.type === 'Assassinate') return `Assasinate ${state.players[action.target].nickname}`;
+    if (action.type === 'Steal') return `Steal from ${state.players[action.target].nickname}`;
+  }
   if (action.type === 'Block') return `Block with ${action.card}`;
 
   return action.type;
+}
+
+function isTargettedAction(action: Action) {
+  return action.type === 'Coup' || action.type === 'Assassinate' || action.type === 'Steal';
 }
 
 type ActionGroupProps = {
@@ -100,16 +106,24 @@ type ActionGroupProps = {
   actions: Array<Action>;
   onActionSelected: (action: Action) => void;
   state: GameState;
+  secondaryAction: Action['type'];
 };
 function ActionGroup(props: ActionGroupProps) {
-  const { actions, groupName, onActionSelected, state } = props;
+  const { actions, groupName, onActionSelected, state, secondaryAction } = props;
   const classes = useStyles();
+  const actionsToRender: Array<Action> = actions.reduce((dedupedActions, action) => {
+    if (secondaryAction) return [...dedupedActions, action];
+    if (!dedupedActions.find((a: Action) => a.type === action.type)) {
+      return [...dedupedActions, action];
+    }
+    return dedupedActions;
+  }, []);
 
   return (
-    actions.length > 0 && (
+    actionsToRender.length > 0 && (
       <Box mb={4}>
         <Typography variant="h6">{groupName}</Typography>
-        {actions.map((action, idx) => (
+        {actionsToRender.map((action, idx) => (
           <Button
             fullWidth
             variant="contained"
@@ -119,9 +133,21 @@ function ActionGroup(props: ActionGroupProps) {
             onClick={() => onActionSelected(action)}
             disabled={action.type === 'Assassinate' && action.disabled}
           >
-            {actionToString(action, state)}
+            {actionToString(action, state, secondaryAction)}
           </Button>
         ))}
+        {secondaryAction && (
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            key={`action-back`}
+            className={classes.actionButton}
+            onClick={() => onActionSelected(null)}
+          >
+            Back
+          </Button>
+        )}
       </Box>
     )
   );
@@ -133,13 +159,29 @@ type ActionsProps = {
 export function Actions(props: ActionsProps) {
   const classes = useStyles();
   const { state } = props;
+  // set when we are doing a 2 part action (ie coup -> coup Bob)
+  const [secondaryAction, setSecondaryAction] = useState<Action['type']>(null);
   const socket = useContext(SocketContext);
   const { isMyTurn, curTurnName, lastAction, me } = getStateInfo(state);
   const actions = state.actions[me.index];
   const { generalActions, characterActions, bluffActions } = actions;
+  const secondaryActions = secondaryAction
+    ? [...generalActions, ...characterActions, ...bluffActions].filter((action) => action.type === secondaryAction)
+    : [];
 
   const onActionSelected = (action: Action) => {
-    socket.emit('player-action', { action });
+    // massive hack, but we pass null as the action to represent "Back" being clicked
+    // in a secondary action
+    if (!action) {
+      setSecondaryAction(null);
+      return;
+    }
+    if (isTargettedAction(action) && !secondaryAction) {
+      setSecondaryAction(action.type);
+    } else {
+      setSecondaryAction(null);
+      socket.emit('player-action', { action });
+    }
   };
 
   return (
@@ -150,28 +192,40 @@ export function Actions(props: ActionsProps) {
         </Box>
       </Paper>
       <Box mt={4} mb={10}>
-        {generalActions && (
+        {secondaryAction && (
+          <ActionGroup
+            groupName={`${secondaryAction} Actions`}
+            actions={secondaryActions}
+            onActionSelected={onActionSelected}
+            state={state}
+            secondaryAction={secondaryAction}
+          />
+        )}
+        {!secondaryAction && generalActions && (
           <ActionGroup
             groupName="General Actions"
             actions={generalActions}
             onActionSelected={onActionSelected}
             state={state}
+            secondaryAction={secondaryAction}
           />
         )}
-        {characterActions && (
+        {!secondaryAction && characterActions && (
           <ActionGroup
             groupName="Character Actions"
             actions={characterActions}
             onActionSelected={onActionSelected}
             state={state}
+            secondaryAction={secondaryAction}
           />
         )}
-        {bluffActions && (
+        {!secondaryAction && bluffActions && (
           <ActionGroup
             groupName="Bluff Actions"
             actions={bluffActions}
             onActionSelected={onActionSelected}
             state={state}
+            secondaryAction={secondaryAction}
           />
         )}
       </Box>
