@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { makeStyles, Paper, Box, Typography, Button } from '@material-ui/core';
 
 import { getStateInfo } from './types';
@@ -222,6 +222,10 @@ export function Actions(props: ActionsProps) {
     ? [...generalActions, ...characterActions, ...bluffActions].filter((action) => action.type === secondaryAction)
     : [];
 
+  useEffect(() => {
+    setSecondaryAction(null);
+  }, [state]);
+
   const onActionSelected = (action: Action) => {
     // massive hack, but we pass null as the action to represent "Back" being clicked
     // in a secondary action
@@ -232,7 +236,7 @@ export function Actions(props: ActionsProps) {
     if (isTargettedAction(action) && !secondaryAction) {
       setSecondaryAction(action.type);
     } else {
-      setSecondaryAction(null);
+      // setSecondaryAction(null);
       socket.emit('player-action', { action });
     }
   };
