@@ -13,9 +13,7 @@ import {
   GridList,
   Fab,
 } from '@material-ui/core';
-import VisibilityIcon from '@material-ui/icons/Visibility';
-import { IconButton } from 'material-ui';
-import { PlayerContext } from '../../contexts';
+
 const useStyles = makeStyles((theme) => ({
   button: {
     color: 'white',
@@ -28,10 +26,12 @@ const useStyles = makeStyles((theme) => ({
   card: {
     maxHeight: '140px',
     width: 'auto',
-    // alignSelf: 'center',
+    // Need this for when showing a box shadow, need it to blend around the card
+    background: 'rgba(0,0,0,0.6)',
   },
   selected: {
     filter: 'grayscale(80%)',
+    boxShadow: '3px 4px 5px 0px rgba(0,0,0,0.75)',
   },
   coin: {
     height: theme.spacing(5),
@@ -132,7 +132,15 @@ export function ShowHandDrawer(props: ShowHandDrawerProps) {
                 [classes.selected]: (allowSelection && selected.includes(i)) || card.flipped,
               });
               return (
-                <Box ml={1} mr={1} display="flex" alignItems="center" flexDirection="column" key={'cc' + i}>
+                <Box
+                  ml={1}
+                  mr={1}
+                  display="flex"
+                  alignItems="center"
+                  flexDirection="column"
+                  key={'cc' + i}
+                  style={{ backgroundColor: 'transparent' }}
+                >
                   <img
                     src={`assets/${card.card}.png`}
                     className={className}
