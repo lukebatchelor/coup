@@ -78,8 +78,7 @@ export function actionToText(playerAction: PlayerAction, state: GameState): stri
     case 'Assassinate':
       return `${playerIsOrYouAre} paying 3 coins to assasinate ${targetPlayerName}`;
     case 'Exchange':
-      if (isMyTurn) return 'Select two cards to put back in the deck';
-      return `${playerIsOrYouAre} exchanging cards with the deck`;
+      return `${playerIsOrYouAre} exchanging cards with the court deck`;
     case 'Steal':
       return `${playerIsOrYouAre} stealing coins from ${targetPlayerName}`;
     case 'Challenge':
@@ -243,8 +242,9 @@ export function Actions(props: ActionsProps) {
         <Box p={2} mt={2}>
           <Typography gutterBottom>{actionToText(lastAction, state)}</Typography>
           {actions.chooseActions && lastAction.action.type !== 'Exchange' && (
-            <Typography>Choose an influence to reveal below</Typography>
+            <Typography gutterBottom>Choose an influence to reveal below</Typography>
           )}
+          {state.waitingOnPlayers.length > 0 && <Typography>Waiting on other players...</Typography>}
         </Box>
       </Paper>
       <Box mt={4} mb={10}>
