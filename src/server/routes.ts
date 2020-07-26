@@ -1,6 +1,6 @@
 import express from 'express';
 import { wrapExpressPromise } from './util';
-import { getRoom } from './repository';
+import { getRoom, getUsersInRoom } from './repository';
 
 export const routes = express.Router();
 
@@ -11,7 +11,8 @@ routes.get(
     if (!room) {
       return { room: null };
     }
-    return { room: { roomCode: req.params.roomCode } };
+    const playerNickNames = (await getUsersInRoom(room.roomCode)).map(({ nickName }) => ({ nickName }));
+    return { room: { roomCode: req.params.roomCode, inGame: room.inGame, players: playerNickNames } };
   })
 );
 

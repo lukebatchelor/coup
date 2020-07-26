@@ -10,7 +10,7 @@ declare type TypedResponse<ResBody = any> = ResBody;
 /**
  * ROOMS
  */
-declare type Room = { roomCode: string };
+declare type Room = { roomCode: string; inGame?: boolean; players: Array<{ nickName: string }> };
 
 // GET /api/rooms/:roomCode
 declare type getRoomResponseBody = { room?: Room };

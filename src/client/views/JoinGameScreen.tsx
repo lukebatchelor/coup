@@ -43,6 +43,15 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
       setRoomCodeHelperText('No room found with id: ' + roomCode);
       setRoomCodeError(true);
     } else {
+      if (maybeRoom.room.inGame) {
+        setRoomCodeHelperText('Game already started with room code: ' + roomCode);
+        setRoomCodeError(true);
+        return;
+      }
+      if (maybeRoom.room.players.some(({ nickName: name }) => nickName === name)) {
+        setNickNameError('Name already taken');
+        return;
+      }
       setPlayerInfo({ roomCode, nickName });
       setCurView(Views.Lobby);
     }
