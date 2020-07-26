@@ -160,9 +160,19 @@ type ActionGroupProps = {
   onActionSelected: (action: Action) => void;
   state: GameState;
   secondaryAction: Action['type'];
+  variant?: 'contained' | 'outlined';
+  color?: 'primary' | 'secondary';
 };
 function ActionGroup(props: ActionGroupProps) {
-  const { actions, groupName, onActionSelected, state, secondaryAction } = props;
+  const {
+    actions,
+    groupName,
+    onActionSelected,
+    state,
+    secondaryAction,
+    variant = 'contained',
+    color = 'primary',
+  } = props;
   const classes = useStyles();
   const actionsToRender: Array<Action> = actions.reduce((dedupedActions, action) => {
     if (secondaryAction) return [...dedupedActions, action];
@@ -179,8 +189,8 @@ function ActionGroup(props: ActionGroupProps) {
         {actionsToRender.map((action, idx) => (
           <Button
             fullWidth
-            variant="contained"
-            color="primary"
+            variant={variant}
+            color={color}
             key={`action-${idx}`}
             className={classes.actionButton}
             onClick={() => onActionSelected(action)}
@@ -193,7 +203,7 @@ function ActionGroup(props: ActionGroupProps) {
           <Button
             fullWidth
             variant="outlined"
-            color="primary"
+            color={color}
             key={`action-back`}
             className={classes.actionButton}
             onClick={() => onActionSelected(null)}
@@ -236,7 +246,6 @@ export function Actions(props: ActionsProps) {
     if (isTargettedAction(action) && !secondaryAction) {
       setSecondaryAction(action.type);
     } else {
-      // setSecondaryAction(null);
       socket.emit('player-action', { action });
     }
   };
