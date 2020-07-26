@@ -100,11 +100,7 @@ export default class Coup {
       }
     }
 
-    // if (this.isActionChallengable(action) || this.isActionBlockable(action)) {
-    //   this.updateWaitingOnPlayers(player, action);
-    // }
     const actionOnTopOfStack = this.state.actionStack[this.state.actionStack.length - 1];
-    console.log('action on top of stack', JSON.stringify(actionOnTopOfStack));
     if (
       actionOnTopOfStack &&
       (this.isActionChallengable(actionOnTopOfStack.action) || this.isActionBlockable(actionOnTopOfStack.action)) &&
@@ -355,6 +351,7 @@ export default class Coup {
         this.executeResolutionActions();
         break;
       case 'Declare Winner':
+      case 'Revealing Influence':
         break;
       default:
         assert(false, 'Unhandled action type: ' + action.type);
