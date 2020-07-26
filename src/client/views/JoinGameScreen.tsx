@@ -52,7 +52,7 @@ export function JoinGameScreen(props: JoinGameScreenProps) {
   const onRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomCodeError(false);
     setRoomCodeHelperText('(four letter code given to you by your host)');
-    setRoomCode(e.target.value);
+    setRoomCode(e.target.value.toUpperCase());
   };
   const disableRoomCodeInput = playerInfo.isHost;
 
