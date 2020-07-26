@@ -8,6 +8,7 @@ import { getStateInfo } from './PlayingScreen/types';
 import { SocketContext, PlayerContext, CurViewContext } from '../contexts';
 import { actionToText } from './PlayingScreen/Actions';
 import { Views } from './Views';
+import playerColors from '../components/playerColors';
 
 const NO_ACTION_TIMEOUT_MS = 10000;
 const RESOLUTION_PAUSE_MS = 3000;
@@ -125,7 +126,14 @@ export function HostScreen(props: HostScreenProps) {
                 className={clsx(classes.paper, { [classes.seeThrough]: waitingOnAnyPlayer && !isWaitingOnPlayer })}
               >
                 <Box display="flex" flexDirection="row" alignItems="center" mb={2}>
-                  <Avatar alt={player.nickname} src="/" />
+                  <Avatar
+                    alt={player.nickname}
+                    src="/"
+                    style={{
+                      backgroundColor: playerColors[playerIdx].background,
+                      color: playerColors[playerIdx].color,
+                    }}
+                  />
                   <Box ml={1} />
                   <Typography>{player.nickname}</Typography>
                   <Box display="flex" flexDirection="row" alignItems="center" ml="auto">
