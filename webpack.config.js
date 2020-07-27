@@ -1,12 +1,12 @@
-import * as path from 'path';
-import * as webpack from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-import CopyPlugin from 'copy-webpack-plugin';
+const path = require('path');
+const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 const pathPrefix = process.env.BASE_URL ? process.env.BASE_URL : '';
 const PROD = process.env.PROD;
 
-const config: webpack.Configuration = {
+const config = {
   context: path.resolve(__dirname, 'src/client'),
   entry: './index.tsx',
   output: {
@@ -25,7 +25,7 @@ const config: webpack.Configuration = {
       },
     ],
   },
-  devtool: 'inline-source-map',
+
   resolve: {
     extensions: ['.ts', '.tsx', '.js'],
   },
@@ -61,4 +61,4 @@ if (!PROD) {
   config.plugins.push(new webpack.EnvironmentPlugin({ BASE_URL: 'https://coup.jbat.ch' }));
 }
 
-export default config;
+module.exports = config;
